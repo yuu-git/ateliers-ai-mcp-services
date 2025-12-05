@@ -1,0 +1,10 @@
+<Solution>
+  <Folder Name="/Solution Items/">
+    <File Path=".gitignore" />
+    <File Path="LICENSE" />
+  </Folder>
+  <Folder Name="/Tests/">
+    <Project Path="Ateliers.Ai.Mcp.Services.UnitTests/Ateliers.Ai.Mcp.Services.UnitTests.csproj" Id="eee5b1ff-f64b-4dd3-a7f2-5ada20aa934f" />
+  </Folder>
+  <Project Path="Ateliers.Ai.Mcp.Services/Ateliers.Ai.Mcp.Services.csproj" />
+</Solution>
