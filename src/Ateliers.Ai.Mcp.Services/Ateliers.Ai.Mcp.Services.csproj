@@ -1,9 +1,37 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <LangVersion>latest</LangVersion>
+
+    <!-- NuGet パッケージ情報 -->
+    <Version>0.1.0</Version>
+    <PackageId>Ateliers.Ai.Mcp.Services</PackageId>
+    <Authors>ateliers</Authors>
+    <Company>ateliers.dev</Company>
+    <Product>Ateliers AI MCP</Product>
+    <Description>Base interfaces and models for Ateliers AI Model Context Protocol (MCP) services implementation</Description>
+    <PackageTags>mcp;ai;services;infrastructure;interfaces</PackageTags>
+    <PackageProjectUrl>https://github.com/yuu-git/ateliers-ai-mcp-services</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/yuu-git/ateliers-ai-mcp-services</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+
+    <!-- Assembly情報 -->
+    <AssemblyVersion>0.1.0.0</AssemblyVersion>
+    <FileVersion>0.1.0.0</FileVersion>
+    <InformationalVersion>0.1.0</InformationalVersion>
+
+    <!-- NuGet パッケージ設定 -->
+    <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
   </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Ateliers.Ai.Mcp.Core" Version="0.1.1" />
+  </ItemGroup>
 
 </Project>

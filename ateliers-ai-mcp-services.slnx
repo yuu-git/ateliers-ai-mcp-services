@@ -1,7 +1,9 @@
 <Solution>
   <Folder Name="/Solution Items/">
+    <File Path=".github/workflows/ci-cd.yml" />
     <File Path=".gitignore" />
     <File Path="LICENSE" />
+    <File Path="README.md" />
   </Folder>
   <Folder Name="/src/">
     <Project Path="src/Ateliers.Ai.Mcp.Services.Git/Ateliers.Ai.Mcp.Services.Git.csproj" Id="035d1450-f062-4b0e-8041-12a5e0794fc0" />
@@ -11,8 +13,8 @@
     <Project Path="src/Ateliers.Ai.Mcp.Services/Ateliers.Ai.Mcp.Services.csproj" />
   </Folder>
   <Folder Name="/src/unit tests/">
-    <Project Path="src/Ateliers.Ai.Mcp.Services.GitHub.UnitTests/Ateliers.Ai.Mcp.Services.GitHub.UnitTests.csproj" Id="1eee12dc-7804-46c5-babf-bf97684496cf" />
     <Project Path="src/Ateliers.Ai.Mcp.Services.Git.UnitTests/Ateliers.Ai.Mcp.Services.Git.UnitTests.csproj" Id="6fab2421-cd0f-4d7a-84a3-99e034b5181e" />
+    <Project Path="src/Ateliers.Ai.Mcp.Services.GitHub.UnitTests/Ateliers.Ai.Mcp.Services.GitHub.UnitTests.csproj" Id="1eee12dc-7804-46c5-babf-bf97684496cf" />
     <Project Path="src/Ateliers.Ai.Mcp.Services.LocalFs.UnitTests/Ateliers.Ai.Mcp.Services.LocalFs.UnitTests.csproj" Id="0f0f0275-9d1a-4cfc-a878-f0469849ac2c" />
     <Project Path="src/Ateliers.Ai.Mcp.Services.Notion.UnitTests/Ateliers.Ai.Mcp.Services.Notion.UnitTests.csproj" Id="e9cc32a1-bd61-4e76-9b60-21bdb9ab6f51" />
     <Project Path="src/Ateliers.Ai.Mcp.Services.UnitTests/Ateliers.Ai.Mcp.Services.UnitTests.csproj" Id="eee5b1ff-f64b-4dd3-a7f2-5ada20aa934f" />
