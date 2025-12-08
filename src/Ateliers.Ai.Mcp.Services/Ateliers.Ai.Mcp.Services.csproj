@@ -31,6 +31,11 @@
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
   </PropertyGroup>
 
+  <!-- README を NuGet パッケージに含める -->
+  <ItemGroup>
+    <None Include="..\..\README.md" Pack="true" PackagePath="\" />
+  </ItemGroup>
+  
   <ItemGroup>
     <PackageReference Include="Ateliers.Ai.Mcp.Core" Version="0.1.1" />
   </ItemGroup>
