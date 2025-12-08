@@ -1,5 +1,8 @@
 ﻿namespace Ateliers.Ai.Mcp.Services.GenericModels;
 
+/// <summary>
+/// 汎用的 Git 設定
+/// </summary>
 public class GenericGitSettings : IGitHubSettings, IGitSettings, ILocalFileSystemSettings
 {
     /// <summary>

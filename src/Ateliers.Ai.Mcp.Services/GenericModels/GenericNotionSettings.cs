@@ -1,23 +1,23 @@
-﻿namespace Ateliers.Ai.Mcp.Services;
+﻿namespace Ateliers.Ai.Mcp.Services.GenericModels;
 
 /// <summary>
-/// Notion 設定
+/// 汎用的 Notion 設定
 /// </summary>
-public interface INotionSettings
+public class GenericNotionSettings : INotionSettings
 {
     /// <summary>
     /// ノーション接続の API トークン
     /// </summary>
-    public string ApiToken { get; }
+    public string ApiToken { get; set; } = string.Empty;
 
     /// <summary>
     /// ノーション ワークスペース ID
     /// </summary>
-    public string WorkspaceId { get; }
+    public string WorkspaceId { get; set; } = string.Empty;
 
     /// <summary>
     /// ノーション データベース一覧 
     /// </summary>
     /// <remarks> Key: データベース名, Value: データベース ID </remarks>
-    public IDictionary<string, string> Databases { get; }
+    public IDictionary<string, string> Databases { get; set; } = new Dictionary<string, string>();
 }

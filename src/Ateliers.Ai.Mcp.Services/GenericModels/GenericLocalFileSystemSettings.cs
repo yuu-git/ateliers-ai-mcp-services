@@ -1,7 +1,7 @@
 ﻿namespace Ateliers.Ai.Mcp.Services.GenericModels;
 
 /// <summary>
-/// ローカルファイルシステム設定
+/// 汎用的ローカルファイルシステム設定
 /// </summary>
 public class GenericLocalFileSystemSettings : ILocalFileSystemSettings
 {

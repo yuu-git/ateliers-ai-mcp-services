@@ -3,6 +3,39 @@ using Octokit;
 
 namespace Ateliers.Ai.Mcp.Services.GitHub;
 
+public class RepositoryInfo
+{
+    /// <summary>
+    /// リポジトリキー
+    /// </summary>
+    public string Key { get; set; } = string.Empty;
+
+    /// <summary>
+    /// オーナー名
+    /// </summary>
+    public string Owner { get; set; } = string.Empty;
+
+    /// <summary>
+    /// リポジトリ名
+    /// </summary>
+    public string Name { get; set; } = string.Empty;
+
+    /// <summary>
+    /// ブランチ名
+    /// </summary>
+    public string Branch { get; set; } = string.Empty;
+
+    /// <summary>
+    /// 優先データソース（GitHub or Local）
+    /// </summary>
+    public string PriorityDataSource { get; set; } = string.Empty;
+
+    /// <summary>
+    /// ローカルパスが設定されているかどうか
+    /// </summary>
+    public bool HasLocalPath { get; set; }
+}
+
 /// <summary>
 /// GitHubリポジトリからのファイル取得サービス
 /// </summary>
@@ -26,6 +59,45 @@ public class GitHubService
         {
             _client.Connection.Credentials = new Credentials(_gitHubSettings.GlobalPersonalAccessToken);
         }
+    }
+
+    /// <summary>
+    /// リポジトリが存在するかどうか
+    /// </summary>
+    /// <param name="repositoryKey">リポジトリ名称</param>
+    /// <returns>存在する場合はtrue、それ以外はfalse</returns>
+    public bool RepositoryExists(string repositoryKey)
+    {
+        return _gitHubSettings.GitHubRepositories.ContainsKey(repositoryKey);
+    }
+
+    /// <summary>
+    /// リポジトリ一覧を取得
+    /// </summary>
+    public IEnumerable<string> GetRepositoryKeys()
+    {
+        return _gitHubSettings.GitHubRepositories.Keys;
+    }
+
+    /// <summary>
+    /// リポジトリ情報を取得
+    /// </summary>
+    /// <param name="repositoryKey">リポジトリ名称 </param>
+    /// <returns> リポジトリ情報、存在しない場合はnull </returns>
+    public RepositoryInfo? GetRepositoryInfo(string repositoryKey)
+    {
+        if (!_gitHubSettings.GitHubRepositories.TryGetValue(repositoryKey, out var config))
+            return null;
+
+        return new RepositoryInfo
+        {
+            Key = repositoryKey,
+            Owner = config.GitHubSource?.Owner ?? string.Empty,
+            Name = config.GitHubSource?.Name ?? string.Empty,
+            Branch = config.GitHubSource?.Branch ?? string.Empty,
+            PriorityDataSource = config.PriorityDataSource,
+            HasLocalPath = !string.IsNullOrEmpty(config.LocalPath)
+        };
     }
 
     /// <summary>

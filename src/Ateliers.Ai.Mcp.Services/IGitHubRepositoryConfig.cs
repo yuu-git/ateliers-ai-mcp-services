@@ -16,7 +16,7 @@ public interface IGitHubRepositoryConfig
     /// <summary>
     /// GitHub設定
     /// </summary>
-    public IGitHubSourceConfig GitHubSource { get; }
+    public IGitHubSourceConfig? GitHubSource { get; }
 
     /// <summary>
     /// ローカルパス（設定時はローカル優先）
