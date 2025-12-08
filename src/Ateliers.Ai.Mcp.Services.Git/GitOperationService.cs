@@ -1,11 +1,13 @@
 using LibGit2Sharp;
+using Ateliers.Ai.Mcp.Services;
+using Ateliers.Ai.Mcp.Services.Models;
 
 namespace Ateliers.Ai.Mcp.Services.Git;
 
 /// <summary>
 /// Git操作サービス（LibGit2Sharp使用）
 /// </summary>
-public class GitOperationService
+public class GitOperationService : IGitOperationService
 {
     private readonly IGitSettings _gitSettings;
 
@@ -19,7 +21,7 @@ public class GitOperationService
     /// <summary>
     /// Pull実行（リモートの変更をローカルに取り込む）
     /// </summary>
-    public async Task<PullResult> PullAsync(string repositoryKey, string repoPath)
+    public async Task<IGitPullResult> PullAsync(string repositoryKey, string repoPath)
     {
         return await Task.Run(() =>
         {
@@ -29,7 +31,7 @@ public class GitOperationService
                 var token = _gitSettings.ResolveToken(repositoryKey);
                 if (token == null)
                 {
-                    return new PullResult
+                    return new GitPullResult
                     {
                         Success = false,
                         Message = "Git token not configured - skipping pull"
@@ -40,7 +42,7 @@ public class GitOperationService
                 var (email, username) = _gitSettings.ResolveGitIdentity(repositoryKey);
                 if (string.IsNullOrEmpty(email) || string.IsNullOrEmpty(username))
                 {
-                    return new PullResult
+                    return new GitPullResult
                     {
                         Success = false,
                         Message = "Git email or username not configured."
@@ -50,7 +52,7 @@ public class GitOperationService
                 // リポジトリチェック
                 if (!Repository.IsValid(repoPath))
                 {
-                    return new PullResult
+                    return new GitPullResult
                     {
                         Success = false,
                         Message = $"Not a valid git repository: {repoPath}"
@@ -76,7 +78,7 @@ public class GitOperationService
                 // マージステータス確認
                 if (result.Status == MergeStatus.Conflicts)
                 {
-                    return new PullResult
+                    return new GitPullResult
                     {
                         Success = false,
                         HasConflict = true,
@@ -88,7 +90,7 @@ public class GitOperationService
                     };
                 }
 
-                return new PullResult
+                return new GitPullResult
                 {
                     Success = true,
                     Message = $"Pull completed: {result.Status}"
@@ -96,7 +98,7 @@ public class GitOperationService
             }
             catch (Exception ex)
             {
-                return new PullResult
+                return new GitPullResult
                 {
                     Success = false,
                     Message = $"Pull failed: {ex.Message}"
@@ -108,7 +110,7 @@ public class GitOperationService
     /// <summary>
     /// Commit実行（単一ファイル）
     /// </summary>
-    public async Task<CommitResult> CommitAsync(
+    public async Task<IGitCommitResult> CommitAsync(
         string repositoryKey,
         string repoPath,
         string filePath,
@@ -122,7 +124,7 @@ public class GitOperationService
                 var (email, username) = _gitSettings.ResolveGitIdentity(repositoryKey);
                 if (string.IsNullOrEmpty(email) || string.IsNullOrEmpty(username))
                 {
-                    return new CommitResult
+                    return new GitCommitResult
                     {
                         Success = false,
                         Message = "Git email or username not configured."
@@ -132,7 +134,7 @@ public class GitOperationService
                 // リポジトリチェック
                 if (!Repository.IsValid(repoPath))
                 {
-                    return new CommitResult
+                    return new GitCommitResult
                     {
                         Success = false,
                         Message = $"Not a valid git repository: {repoPath}"
@@ -151,7 +153,7 @@ public class GitOperationService
                 var signature = new Signature(username, email, DateTimeOffset.Now);
                 var commit = repo.Commit(message, signature, signature);
 
-                return new CommitResult
+                return new GitCommitResult
                 {
                     Success = true,
                     Message = $"Committed: {commit.MessageShort}",
@@ -160,7 +162,7 @@ public class GitOperationService
             }
             catch (Exception ex)
             {
-                return new CommitResult
+                return new GitCommitResult
                 {
                     Success = false,
                     Message = $"Commit failed: {ex.Message}"
@@ -172,7 +174,7 @@ public class GitOperationService
     /// <summary>
     /// Commit実行（全変更を一括コミット）
     /// </summary>
-    public async Task<CommitResult> CommitAllAsync(
+    public async Task<IGitCommitResult> CommitAllAsync(
         string repositoryKey,
         string repoPath,
         string? customMessage = null)
@@ -185,7 +187,7 @@ public class GitOperationService
                 var (email, username) = _gitSettings.ResolveGitIdentity(repositoryKey);
                 if (string.IsNullOrEmpty(email) || string.IsNullOrEmpty(username))
                 {
-                    return new CommitResult
+                    return new GitCommitResult
                     {
                         Success = false,
                         Message = "Git email or username not configured."
@@ -195,7 +197,7 @@ public class GitOperationService
                 // リポジトリチェック
                 if (!Repository.IsValid(repoPath))
                 {
-                    return new CommitResult
+                    return new GitCommitResult
                     {
                         Success = false,
                         Message = $"Not a valid git repository: {repoPath}"
@@ -208,7 +210,7 @@ public class GitOperationService
                 var status = repo.RetrieveStatus();
                 if (!status.IsDirty)
                 {
-                    return new CommitResult
+                    return new GitCommitResult
                     {
                         Success = true,
                         Message = "No changes to commit",
@@ -226,7 +228,7 @@ public class GitOperationService
                 var signature = new Signature(username, email, DateTimeOffset.Now);
                 var commit = repo.Commit(message, signature, signature);
 
-                return new CommitResult
+                return new GitCommitResult
                 {
                     Success = true,
                     Message = $"Committed: {commit.MessageShort}",
@@ -235,7 +237,7 @@ public class GitOperationService
             }
             catch (Exception ex)
             {
-                return new CommitResult
+                return new GitCommitResult
                 {
                     Success = false,
                     Message = $"Commit failed: {ex.Message}"
@@ -247,7 +249,7 @@ public class GitOperationService
     /// <summary>
     /// Push実行（コミット済み変更をリモートにプッシュ）
     /// </summary>
-    public async Task<PushResult> PushAsync(string repositoryKey, string repoPath)
+    public async Task<IGitPushResult> PushAsync(string repositoryKey, string repoPath)
     {
         return await Task.Run(() =>
         {
@@ -257,7 +259,7 @@ public class GitOperationService
                 var token = _gitSettings.ResolveToken(repositoryKey);
                 if (token == null)
                 {
-                    return new PushResult
+                    return new GitPushResult
                     {
                         Success = false,
                         Message = "Git token not configured - skipping push"
@@ -267,7 +269,7 @@ public class GitOperationService
                 // リポジトリチェック
                 if (!Repository.IsValid(repoPath))
                 {
-                    return new PushResult
+                    return new GitPushResult
                     {
                         Success = false,
                         Message = $"Not a valid git repository: {repoPath}"
@@ -280,7 +282,7 @@ public class GitOperationService
                 var remote = repo.Network.Remotes["origin"];
                 if (remote == null)
                 {
-                    return new PushResult
+                    return new GitPushResult
                     {
                         Success = false,
                         Message = "Remote 'origin' not found"
@@ -301,7 +303,7 @@ public class GitOperationService
 
                 repo.Network.Push(branch, options);
 
-                return new PushResult
+                return new GitPushResult
                 {
                     Success = true,
                     Message = $"Pushed to {remote.Name}/{branch.FriendlyName}"
@@ -309,7 +311,7 @@ public class GitOperationService
             }
             catch (Exception ex)
             {
-                return new PushResult
+                return new GitPushResult
                 {
                     Success = false,
                     Message = $"Push failed: {ex.Message}"
@@ -321,7 +323,7 @@ public class GitOperationService
     /// <summary>
     /// Tag作成（軽量タグまたは注釈付きタグ）
     /// </summary>
-    public async Task<TagResult> CreateTagAsync(
+    public async Task<IGitTagResult> CreateTagAsync(
         string repositoryKey,
         string repoPath,
         string tagName,
@@ -337,7 +339,7 @@ public class GitOperationService
                     var (email, username) = _gitSettings.ResolveGitIdentity(repositoryKey);
                     if (string.IsNullOrEmpty(email) || string.IsNullOrEmpty(username))
                     {
-                        return new TagResult
+                        return new GitTagResult
                         {
                             Success = false,
                             Message = "Git email or username not configured. (required for annotated tags)"
@@ -347,7 +349,7 @@ public class GitOperationService
                     // リポジトリチェック
                     if (!Repository.IsValid(repoPath))
                     {
-                        return new TagResult
+                        return new GitTagResult
                         {
                             Success = false,
                             Message = $"Not a valid git repository: {repoPath}"
@@ -360,7 +362,7 @@ public class GitOperationService
                     var signature = new Signature(username, email, DateTimeOffset.Now);
                     var tag = repo.Tags.Add(tagName, repo.Head.Tip, signature, message);
 
-                    return new TagResult
+                    return new GitTagResult
                     {
                         Success = true,
                         Message = $"Tag created: {tagName}",
@@ -372,7 +374,7 @@ public class GitOperationService
                     // 軽量タグ（Email/Username不要）
                     if (!Repository.IsValid(repoPath))
                     {
-                        return new TagResult
+                        return new GitTagResult
                         {
                             Success = false,
                             Message = $"Not a valid git repository: {repoPath}"
@@ -382,7 +384,7 @@ public class GitOperationService
                     using var repo = new Repository(repoPath);
                     var tag = repo.Tags.Add(tagName, repo.Head.Tip);
 
-                    return new TagResult
+                    return new GitTagResult
                     {
                         Success = true,
                         Message = $"Tag created: {tagName}",
@@ -392,7 +394,7 @@ public class GitOperationService
             }
             catch (Exception ex)
             {
-                return new TagResult
+                return new GitTagResult
                 {
                     Success = false,
                     Message = $"Tag creation failed: {ex.Message}"
@@ -404,7 +406,7 @@ public class GitOperationService
     /// <summary>
     /// Tag をリモートにプッシュ
     /// </summary>
-    public async Task<PushResult> PushTagAsync(
+    public async Task<IGitPushResult> PushTagAsync(
         string repositoryKey,
         string repoPath,
         string tagName)
@@ -417,7 +419,7 @@ public class GitOperationService
                 var token = _gitSettings.ResolveToken(repositoryKey);
                 if (token == null)
                 {
-                    return new PushResult
+                    return new GitPushResult
                     {
                         Success = false,
                         Message = "Git token not configured - skipping tag push"
@@ -427,7 +429,7 @@ public class GitOperationService
                 // リポジトリチェック
                 if (!Repository.IsValid(repoPath))
                 {
-                    return new PushResult
+                    return new GitPushResult
                     {
                         Success = false,
                         Message = $"Not a valid git repository: {repoPath}"
@@ -440,7 +442,7 @@ public class GitOperationService
                 var remote = repo.Network.Remotes["origin"];
                 if (remote == null)
                 {
-                    return new PushResult
+                    return new GitPushResult
                     {
                         Success = false,
                         Message = "Remote 'origin' not found"
@@ -453,7 +455,7 @@ public class GitOperationService
                 var tag = repo.Tags[tagName];
                 if (tag == null)
                 {
-                    return new PushResult
+                    return new GitPushResult
                     {
                         Success = false,
                         Message = $"Tag '{tagName}' not found"
@@ -469,7 +471,7 @@ public class GitOperationService
 
                 repo.Network.Push(remote, $"refs/tags/{tagName}", options);
 
-                return new PushResult
+                return new GitPushResult
                 {
                     Success = true,
                     Message = $"Tag pushed: {tagName}"
@@ -477,10 +479,10 @@ public class GitOperationService
             }
             catch (Exception ex)
             {
-                return new PushResult
+                return new GitPushResult
                 {
                     Success = false,
-                    Message = $"Tag push failed: {ex.Message}"
+                    Message = $"Push failed: {ex.Message}"
                 };
             }
         });
@@ -493,7 +495,7 @@ public class GitOperationService
     /// <summary>
     /// CommitAndPush実行（単一ファイル）
     /// </summary>
-    public async Task<CommitAndPushResult> CommitAndPushAsync(
+    public async Task<IGitCommitAndPushResult> CommitAndPushAsync(
         string repositoryKey,
         string repoPath,
         string filePath,
@@ -503,7 +505,7 @@ public class GitOperationService
         var commitResult = await CommitAsync(repositoryKey, repoPath, filePath, customMessage);
         if (!commitResult.Success)
         {
-            return new CommitAndPushResult
+            return new GitCommitAndPushResult
             {
                 Success = false,
                 Message = $"Commit failed: {commitResult.Message}"
@@ -514,7 +516,7 @@ public class GitOperationService
         var pushResult = await PushAsync(repositoryKey, repoPath);
         if (!pushResult.Success)
         {
-            return new CommitAndPushResult
+            return new GitCommitAndPushResult
             {
                 Success = false,
                 Message = $"Push failed: {pushResult.Message}",
@@ -522,7 +524,7 @@ public class GitOperationService
             };
         }
 
-        return new CommitAndPushResult
+        return new GitCommitAndPushResult
         {
             Success = true,
             Message = "Committed and pushed successfully",
@@ -533,7 +535,7 @@ public class GitOperationService
     /// <summary>
     /// CommitAndPush実行（全変更を一括）
     /// </summary>
-    public async Task<CommitAndPushResult> CommitAllAndPushAsync(
+    public async Task<IGitCommitAndPushResult> CommitAllAndPushAsync(
         string repositoryKey,
         string repoPath,
         string? customMessage = null)
@@ -542,7 +544,7 @@ public class GitOperationService
         var commitResult = await CommitAllAsync(repositoryKey, repoPath, customMessage);
         if (!commitResult.Success)
         {
-            return new CommitAndPushResult
+            return new GitCommitAndPushResult
             {
                 Success = false,
                 Message = $"Commit failed: {commitResult.Message}"
@@ -552,7 +554,7 @@ public class GitOperationService
         // 変更がない場合はプッシュしない
         if (commitResult.CommitHash == null)
         {
-            return new CommitAndPushResult
+            return new GitCommitAndPushResult
             {
                 Success = true,
                 Message = "No changes to push",
@@ -564,7 +566,7 @@ public class GitOperationService
         var pushResult = await PushAsync(repositoryKey, repoPath);
         if (!pushResult.Success)
         {
-            return new CommitAndPushResult
+            return new GitCommitAndPushResult
             {
                 Success = false,
                 Message = $"Push failed: {pushResult.Message}",
@@ -572,7 +574,7 @@ public class GitOperationService
             };
         }
 
-        return new CommitAndPushResult
+        return new GitCommitAndPushResult
         {
             Success = true,
             Message = "Committed and pushed successfully",
@@ -583,7 +585,7 @@ public class GitOperationService
     /// <summary>
     /// CreateAndPushTag実行（タグ作成→プッシュを一括実行）
     /// </summary>
-    public async Task<TagResult> CreateAndPushTagAsync(
+    public async Task<IGitTagResult> CreateAndPushTagAsync(
         string repositoryKey,
         string repoPath,
         string tagName,
@@ -600,7 +602,7 @@ public class GitOperationService
         var pushResult = await PushTagAsync(repositoryKey, repoPath, tagName);
         if (!pushResult.Success)
         {
-            return new TagResult
+            return new GitTagResult
             {
                 Success = false,
                 Message = $"Tag created but push failed: {pushResult.Message}",
@@ -608,7 +610,7 @@ public class GitOperationService
             };
         }
 
-        return new TagResult
+        return new GitTagResult
         {
             Success = true,
             Message = $"Tag created and pushed: {tagName}",
@@ -618,56 +620,3 @@ public class GitOperationService
 
     #endregion
 }
-
-#region 結果クラス
-
-/// <summary>
-/// Pull操作の結果
-/// </summary>
-public class PullResult
-{
-    public bool Success { get; set; }
-    public string Message { get; set; } = string.Empty;
-    public bool HasConflict { get; set; }
-}
-
-/// <summary>
-/// Commit操作の結果
-/// </summary>
-public class CommitResult
-{
-    public bool Success { get; set; }
-    public string Message { get; set; } = string.Empty;
-    public string? CommitHash { get; set; }
-}
-
-/// <summary>
-/// Push操作の結果
-/// </summary>
-public class PushResult
-{
-    public bool Success { get; set; }
-    public string Message { get; set; } = string.Empty;
-}
-
-/// <summary>
-/// CommitAndPush操作の結果
-/// </summary>
-public class CommitAndPushResult
-{
-    public bool Success { get; set; }
-    public string Message { get; set; } = string.Empty;
-    public string? CommitHash { get; set; }
-}
-
-/// <summary>
-/// Tag操作の結果
-/// </summary>
-public class TagResult
-{
-    public bool Success { get; set; }
-    public string Message { get; set; } = string.Empty;
-    public string? TagName { get; set; }
-}
-
-#endregion
