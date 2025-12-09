@@ -42,6 +42,14 @@ public class GitHubService : IGitHubService
     }
 
     /// <summary>
+    /// リポジトリキー一覧を取得
+    /// </summary>
+    public IEnumerable<string> GetRepositoryKeys()
+    {
+        return _gitHubSettings.GitHubRepositories.Keys;
+    }
+
+    /// <summary>
     /// リポジトリが存在するかどうか
     /// </summary>
     /// <param name="repositoryKey">リポジトリ名称</param>
@@ -52,24 +60,16 @@ public class GitHubService : IGitHubService
     }
 
     /// <summary>
-    /// リポジトリ一覧を取得
-    /// </summary>
-    public IEnumerable<string> GetRepositoryKeys()
-    {
-        return _gitHubSettings.GitHubRepositories.Keys;
-    }
-
-    /// <summary>
     /// リポジトリ情報を取得
     /// </summary>
     /// <param name="repositoryKey">リポジトリ名称 </param>
     /// <returns> リポジトリ情報、存在しない場合はnull </returns>
-    public IGitHubRepositoryInfo? GetRepositoryInfo(string repositoryKey)
+    public IGitHubRepositorySummary? GetRepositoryInfo(string repositoryKey)
     {
         if (!_gitHubSettings.GitHubRepositories.TryGetValue(repositoryKey, out var config))
             return null;
 
-        return new RepositoryInfo
+        return new GitHubRepositorySummary
         {
             Key = repositoryKey,
             Owner = config.GitHubSource?.Owner ?? string.Empty,

@@ -4,15 +4,73 @@ using Ateliers.Ai.Mcp.Services.GenericModels;
 namespace Ateliers.Ai.Mcp.Services.Git;
 
 /// <summary>
-/// Git操作サービス（LibGit2Sharp使用）
+/// Gitサービス（LibGit2Sharp使用）
 /// </summary>
-public class GitOperationService : IGitOperationService
+public class GitService : IGitService
 {
     private readonly IGitSettings _gitSettings;
 
-    public GitOperationService(IGitSettings gitSettings)
+    public GitService(IGitSettings gitSettings)
     {
         _gitSettings = gitSettings;
+    }
+
+    /// <summary>
+    /// リポジトリキー一覧を取得
+    /// </summary>
+    public IEnumerable<string> GetRepositoryKeys()
+    {
+        return _gitSettings.GitRepositories.Keys;
+    }
+
+    /// <summary>
+    /// リポジトリが存在するかどうか
+    /// </summary>
+    /// <param name="repositoryKey">リポジトリキー </param>
+    /// <returns>存在する場合はtrue、それ以外はfalse</returns>
+    public bool RepositoryExists(string repositoryKey)
+    {
+        return _gitSettings.GitRepositories.ContainsKey(repositoryKey);
+    }
+
+    /// <summary>
+    /// リポジトリサマリを取得
+    /// </summary>
+    /// <param name="repositoryKey">リポジトリキー </param>
+    /// <returns> リポジトリ情報、存在しない場合はnull </returns>
+    public IGitRepositorySummary? GetRepositoryInfo(string repositoryKey)
+    {
+        if (!_gitSettings.GitRepositories.TryGetValue(repositoryKey, out var config))
+            return null;
+
+        var repositoryInfo = _gitSettings.GitRepositories.FirstOrDefault(repo => repo.Key == repositoryKey).Value;
+        if (repositoryInfo == null)
+        {
+            // キーに対するリポジトリ情報が見つからない場合
+            throw new InvalidOperationException($"Repository key not found: {repositoryKey}");
+        }
+        else if (string.IsNullOrEmpty(repositoryInfo.LocalPath))
+        {
+            // ローカルパスが設定されていない場合
+            throw new InvalidOperationException($"Local path not configured for repository key: {repositoryKey}");
+        }
+
+        using var repo = new Repository(repositoryInfo.LocalPath);
+
+        if (repo == null)
+        {
+            // リポジトリが無効な場合
+            throw new InvalidOperationException($"Not a valid git repository: {repositoryInfo.LocalPath}");
+        }
+
+        var status = repo.RetrieveStatus();
+        return new GitRepositorySummary
+        {
+            Name = Path.GetFileName(repo.Info.WorkingDirectory.TrimEnd('/', '\\')),
+            Branch = repo.Head.FriendlyName,
+            LocalPath = repositoryInfo.LocalPath,
+            HasLocalPath = !string.IsNullOrEmpty(repositoryInfo.LocalPath)
+        };
     }
 
     #region 基本Git操作

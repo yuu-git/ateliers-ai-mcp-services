@@ -3,9 +3,9 @@ using Ateliers.Ai.Mcp.Services.GenericModels;
 namespace Ateliers.Ai.Mcp.Services;
 
 /// <summary>
-/// Git操作サービスのインターフェース
+/// Gitサービスのインターフェース
 /// </summary>
-public interface IGitOperationService
+public interface IGitService
 {
     #region 基本Git操作
 

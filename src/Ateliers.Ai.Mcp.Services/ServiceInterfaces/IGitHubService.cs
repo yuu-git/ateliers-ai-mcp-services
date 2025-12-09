@@ -18,7 +18,7 @@ public interface IGitHubService
     /// <summary>
     /// リポジトリ情報を取得
     /// </summary>
-    IGitHubRepositoryInfo? GetRepositoryInfo(string repositoryKey);
+    IGitHubRepositorySummary? GetRepositoryInfo(string repositoryKey);
 
     /// <summary>
     /// リポジトリからファイル内容を取得（キャッシュ付き）
