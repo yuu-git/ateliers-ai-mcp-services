@@ -60,11 +60,11 @@ public class GitHubService : IGitHubService
     }
 
     /// <summary>
-    /// リポジトリ情報を取得
+    /// リポジトリサマリを取得
     /// </summary>
     /// <param name="repositoryKey">リポジトリ名称 </param>
     /// <returns> リポジトリ情報、存在しない場合はnull </returns>
-    public IGitHubRepositorySummary? GetRepositoryInfo(string repositoryKey)
+    public IGitHubRepositorySummary? GetRepositorySummary(string repositoryKey)
     {
         if (!_gitHubSettings.GitHubRepositories.TryGetValue(repositoryKey, out var config))
             return null;

@@ -25,7 +25,7 @@ public interface IGitService
     /// </summary>
     /// <param name="repositoryKey">リポジトリキー </param>
     /// <returns> リポジトリ情報、存在しない場合はnull </returns>
-    public IGitRepositorySummary? GetRepositoryInfo(string repositoryKey);
+    public IGitRepositorySummary? GetRepositorySummary(string repositoryKey);
 
     #region 基本Git操作
 

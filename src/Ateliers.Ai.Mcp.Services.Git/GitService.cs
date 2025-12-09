@@ -38,7 +38,7 @@ public class GitService : IGitService
     /// </summary>
     /// <param name="repositoryKey">リポジトリキー </param>
     /// <returns> リポジトリ情報、存在しない場合はnull </returns>
-    public IGitRepositorySummary? GetRepositoryInfo(string repositoryKey)
+    public IGitRepositorySummary? GetRepositorySummary(string repositoryKey)
     {
         if (!_gitSettings.GitRepositories.TryGetValue(repositoryKey, out var config))
             return null;

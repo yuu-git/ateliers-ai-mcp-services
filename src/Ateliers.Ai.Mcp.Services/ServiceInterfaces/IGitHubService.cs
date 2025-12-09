@@ -16,9 +16,9 @@ public interface IGitHubService
     IEnumerable<string> GetRepositoryKeys();
 
     /// <summary>
-    /// リポジトリ情報を取得
+    /// リポジトリサマリを取得
     /// </summary>
-    IGitHubRepositorySummary? GetRepositoryInfo(string repositoryKey);
+    IGitHubRepositorySummary? GetRepositorySummary(string repositoryKey);
 
     /// <summary>
     /// リポジトリからファイル内容を取得（キャッシュ付き）
