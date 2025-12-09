@@ -7,7 +7,7 @@
     <LangVersion>latest</LangVersion>
 
     <!-- NuGet パッケージ情報 -->
-    <Version>0.1.1</Version>
+    <Version>0.1.3</Version>
     <PackageId>Ateliers.Ai.Mcp.Services.Notion</PackageId>
     <Authors>ateliers</Authors>
     <Company>ateliers.dev</Company>
