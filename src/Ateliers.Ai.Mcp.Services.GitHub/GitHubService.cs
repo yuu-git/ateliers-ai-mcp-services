@@ -1,58 +1,38 @@
 using Microsoft.Extensions.Caching.Memory;
 using Octokit;
+using Ateliers.Ai.Mcp.Services.GenericModels;
 
 namespace Ateliers.Ai.Mcp.Services.GitHub;
-
-public class RepositoryInfo
-{
-    /// <summary>
-    /// リポジトリキー
-    /// </summary>
-    public string Key { get; set; } = string.Empty;
-
-    /// <summary>
-    /// オーナー名
-    /// </summary>
-    public string Owner { get; set; } = string.Empty;
-
-    /// <summary>
-    /// リポジトリ名
-    /// </summary>
-    public string Name { get; set; } = string.Empty;
-
-    /// <summary>
-    /// ブランチ名
-    /// </summary>
-    public string Branch { get; set; } = string.Empty;
-
-    /// <summary>
-    /// 優先データソース（GitHub or Local）
-    /// </summary>
-    public string PriorityDataSource { get; set; } = string.Empty;
-
-    /// <summary>
-    /// ローカルパスが設定されているかどうか
-    /// </summary>
-    public bool HasLocalPath { get; set; }
-}
 
 /// <summary>
 /// GitHubリポジトリからのファイル取得サービス
 /// </summary>
-public class GitHubService
+public class GitHubService : IGitHubService
 {
     private readonly IGitHubClient _client;
     private readonly IGitHubSettings _gitHubSettings;
     private readonly IMemoryCache _cache;
     private readonly TimeSpan _cacheExpiration;
 
-    public GitHubService(IGitHubSettings gitHubSettings, IMemoryCache cache)
+    /// <summary>
+    /// コンストラクタ
+    /// </summary>
+    /// <param name="gitHubSettings"> GitHub設定 </param>
+    /// <param name="cache"> メモリキャッシュ </param>
+    /// <param name="gitHubClient"> GitHubクライアント </param>
+    /// <param name="gitOperationService"> Git操作サービス（任意） </param>
+    /// <remarks>
+    /// <para>
+    /// Git操作サービスがある場合、ローカルのGit操作を優先する。
+    /// </para>
+    /// </remarks>
+    public GitHubService(IGitHubSettings gitHubSettings, IMemoryCache cache, IGitHubClient gitHubClient)
     {
         _gitHubSettings = gitHubSettings;
         _cache = cache;
         _cacheExpiration = TimeSpan.FromMinutes(_gitHubSettings.CacheExpirationMinutes);
 
-        _client = new GitHubClient(new ProductHeaderValue("AteliersMcpServer"));
+        _client = gitHubClient;
 
         if (_gitHubSettings.AuthenticationMode == "PersonalAccessToken"
             && !string.IsNullOrEmpty(_gitHubSettings.GlobalPersonalAccessToken))
@@ -84,7 +64,7 @@ public class GitHubService
     /// </summary>
     /// <param name="repositoryKey">リポジトリ名称 </param>
     /// <returns> リポジトリ情報、存在しない場合はnull </returns>
-    public RepositoryInfo? GetRepositoryInfo(string repositoryKey)
+    public IGitHubRepositoryInfo? GetRepositoryInfo(string repositoryKey)
     {
         if (!_gitHubSettings.GitHubRepositories.TryGetValue(repositoryKey, out var config))
             return null;
@@ -96,6 +76,7 @@ public class GitHubService
             Name = config.GitHubSource?.Name ?? string.Empty,
             Branch = config.GitHubSource?.Branch ?? string.Empty,
             PriorityDataSource = config.PriorityDataSource,
+            LocalPath = config.LocalPath ?? string.Empty,
             HasLocalPath = !string.IsNullOrEmpty(config.LocalPath)
         };
     }
@@ -117,18 +98,27 @@ public class GitHubService
         if (repoSettings.PriorityDataSource == "Local" && !string.IsNullOrEmpty(repoSettings.LocalPath))
         {
             try
-            {   // ローカルファイルから取得
-                return await GetLocalFileAsync(repoSettings.LocalPath, filePath);
-            }
-            catch (FileNotFoundException)
             {
-                // ローカルにファイルがない場合はGitHubから取得にフォールバック
-                return await GetGitHubFileAsync(
-                    repoSettings.GitHubSource!.Owner,
-                    repoSettings.GitHubSource.Name,
-                    filePath,
-                    repoSettings.GitHubSource.Branch
-                );
+                var fullPath = Path.Combine(repoSettings.LocalPath, filePath);
+
+                if (File.Exists(fullPath))
+                {
+                    return await File.ReadAllTextAsync(fullPath);
+                }
+                else if (repoSettings.GitHubSource != null)
+                {
+                    // ローカルにファイルが存在しない場合はGitHubから取得にフォールバック
+                    return await GetGitHubFileAsync(
+                        repoSettings.GitHubSource.Owner,
+                        repoSettings.GitHubSource.Name,
+                        filePath,
+                        repoSettings.GitHubSource.Branch
+                    );
+                }
+                else
+                {
+                    throw new FileNotFoundException($"File not found: {filePath} in local path '{repoSettings.LocalPath}'");
+                }
             }
             catch (Exception ex)
             {
@@ -343,21 +333,6 @@ public class GitHubService
         {
             // ディレクトリが存在しない場合は無視
         }
-    }
-
-    /// <summary>
-    /// ローカルファイルから取得
-    /// </summary>
-    private async Task<string> GetLocalFileAsync(string basePath, string filePath)
-    {
-        var fullPath = Path.Combine(basePath, filePath);
-
-        if (!File.Exists(fullPath))
-        {
-            throw new FileNotFoundException($"File not found: {filePath}");
-        }
-
-        return await File.ReadAllTextAsync(fullPath);
     }
 
     /// <summary>

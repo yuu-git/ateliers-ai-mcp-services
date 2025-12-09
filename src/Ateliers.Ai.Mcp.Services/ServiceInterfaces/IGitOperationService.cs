@@ -1,4 +1,4 @@
-using Ateliers.Ai.Mcp.Services.Models;
+using Ateliers.Ai.Mcp.Services.GenericModels;
 
 namespace Ateliers.Ai.Mcp.Services;
 
@@ -12,12 +12,20 @@ public interface IGitOperationService
     /// <summary>
     /// Pull実行（リモートの変更をローカルに取り込む）
     /// </summary>
-    Task<IGitPullResult> PullAsync(string repositoryKey, string repoPath);
+    Task<GitPullResult> PullAsync(string repositoryKey, string repoPath);
+
+    /// <summary>
+    /// Repository情報取得
+    /// </summary>
+    /// <param name="repositoryKey"> リポジトリキー </param>
+    /// <param name="remoteUrlMasked"> リモートURLをマスクするかどうか </param>
+    /// <returns></returns>
+    public GitRepositoryInfoDto GetRepositoryInfo(string repositoryKey, bool remoteUrlMasked = true);
 
     /// <summary>
     /// Commit実行（単一ファイル）
     /// </summary>
-    Task<IGitCommitResult> CommitAsync(
+    Task<GitCommitResult> CommitAsync(
         string repositoryKey,
         string repoPath,
         string filePath,
@@ -26,7 +34,7 @@ public interface IGitOperationService
     /// <summary>
     /// Commit実行（全変更を一括コミット）
     /// </summary>
-    Task<IGitCommitResult> CommitAllAsync(
+    Task<GitCommitResult> CommitAllAsync(
         string repositoryKey,
         string repoPath,
         string? customMessage = null);
@@ -34,12 +42,12 @@ public interface IGitOperationService
     /// <summary>
     /// Push実行（コミット済み変更をリモートにプッシュ）
     /// </summary>
-    Task<IGitPushResult> PushAsync(string repositoryKey, string repoPath);
+    Task<GitPushResult> PushAsync(string repositoryKey, string repoPath);
 
     /// <summary>
     /// Tag作成（軽量タグまたは注釈付きタグ）
     /// </summary>
-    Task<IGitTagResult> CreateTagAsync(
+    Task<GitTagResult> CreateTagAsync(
         string repositoryKey,
         string repoPath,
         string tagName,
@@ -48,7 +56,7 @@ public interface IGitOperationService
     /// <summary>
     /// Tag をリモートにプッシュ
     /// </summary>
-    Task<IGitPushResult> PushTagAsync(
+    Task<GitPushResult> PushTagAsync(
         string repositoryKey,
         string repoPath,
         string tagName);
@@ -60,7 +68,7 @@ public interface IGitOperationService
     /// <summary>
     /// CommitAndPush実行（単一ファイル）
     /// </summary>
-    Task<IGitCommitAndPushResult> CommitAndPushAsync(
+    Task<GitCommitAndPushResult> CommitAndPushAsync(
         string repositoryKey,
         string repoPath,
         string filePath,
@@ -69,7 +77,7 @@ public interface IGitOperationService
     /// <summary>
     /// CommitAndPush実行（全変更を一括）
     /// </summary>
-    Task<IGitCommitAndPushResult> CommitAllAndPushAsync(
+    Task<GitCommitAndPushResult> CommitAllAndPushAsync(
         string repositoryKey,
         string repoPath,
         string? customMessage = null);
@@ -77,7 +85,7 @@ public interface IGitOperationService
     /// <summary>
     /// CreateAndPushTag実行（タグ作成→プッシュを一括実行）
     /// </summary>
-    Task<IGitTagResult> CreateAndPushTagAsync(
+    Task<GitTagResult> CreateAndPushTagAsync(
         string repositoryKey,
         string repoPath,
         string tagName,

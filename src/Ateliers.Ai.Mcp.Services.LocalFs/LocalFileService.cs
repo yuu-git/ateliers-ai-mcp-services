@@ -3,7 +3,7 @@
 /// <summary>
 /// ローカルファイルシステム操作サービス
 /// </summary>
-public class LocalFileService
+public class LocalFileService : ILocalFileService
 {
     private readonly ILocalFileSystemSettings _localFileSystemSettings;
 

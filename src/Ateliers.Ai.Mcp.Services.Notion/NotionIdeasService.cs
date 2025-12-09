@@ -1,11 +1,12 @@
 using Notion.Client;
+using Ateliers.Ai.Mcp.Services;
 
 namespace Ateliers.Ai.Mcp.Services.Notion;
 
 /// <summary>
 /// Notion Ideas データベースの操作を担当するサービス
 /// </summary>
-public class NotionIdeasService : NotionServiceBase
+public class NotionIdeasService : NotionServiceBase, INotionIdeasService
 {
     /// <summary>
     /// コンストラクタ

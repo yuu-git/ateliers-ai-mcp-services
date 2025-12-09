@@ -1,6 +1,5 @@
 using LibGit2Sharp;
-using Ateliers.Ai.Mcp.Services;
-using Ateliers.Ai.Mcp.Services.Models;
+using Ateliers.Ai.Mcp.Services.GenericModels;
 
 namespace Ateliers.Ai.Mcp.Services.Git;
 
@@ -19,9 +18,84 @@ public class GitOperationService : IGitOperationService
     #region 基本Git操作
 
     /// <summary>
+    /// リポジトリ情報取得
+    /// </summary>
+    /// <param name="repositoryKey"> リポジトリキー </param>
+    /// <param name="remoteUrlMasked"> リモートURLをマスクするかどうか (default: true) </param>
+    /// <returns> リポジトリ情報 </returns>
+    public GitRepositoryInfoDto GetRepositoryInfo(string repositoryKey, bool remoteUrlMasked = true)
+    {
+        var repositoryInfo = _gitSettings.GitRepositories.FirstOrDefault(repo => repo.Key == repositoryKey).Value;
+        if (repositoryInfo == null)
+        {
+            // キーに対するリポジトリ情報が見つからない場合
+            throw new InvalidOperationException($"Repository key not found: {repositoryKey}");
+        }
+        else if (string.IsNullOrEmpty(repositoryInfo.LocalPath))
+        {
+            // ローカルパスが設定されていない場合
+            throw new InvalidOperationException($"Local path not configured for repository key: {repositoryKey}");
+        }
+
+        using var repo = new Repository(repositoryInfo.LocalPath);
+
+        if (repo == null)
+        {
+            // リポジトリが無効な場合
+            throw new InvalidOperationException($"Not a valid git repository: {repositoryInfo.LocalPath}");
+        }
+
+        var status = repo.RetrieveStatus();
+
+        return new GitRepositoryInfoDto
+        {
+            RepositoryName = Path.GetFileName(repo.Info.WorkingDirectory.TrimEnd('/', '\\')),
+            CurrentBranch = repo.Head.FriendlyName,
+            IsClean = !status.IsDirty,
+
+            Branches = repo.Branches
+                .Where(b => !b.IsRemote)
+                .Select(b => new BranchInfoDto
+                {
+                    Name = b.FriendlyName,
+                    LatestCommitSha = b.Tip?.Sha ?? string.Empty,
+                    LatestCommitDate = b.Tip?.Author.When.LocalDateTime ?? DateTime.MinValue
+                })
+                .ToList(),
+
+            RecentCommits = repo.Commits.Take(20)
+                .Select(c => new CommitInfoDto
+                {
+                    Sha = c.Sha,
+                    Message = c.MessageShort,
+                    Date = c.Author.When.LocalDateTime
+                })
+                .ToList(),
+
+            Status = status
+                .Select(s => new FileStatusInfoDto
+                {
+                    FilePath = s.FilePath,
+                    State = s.State.ToString()
+                })
+                .ToList(),
+
+            Remotes = repo.Network.Remotes
+                .Select(r => new RemoteInfoDto
+                {
+                    Name = r.Name,
+                    Url = remoteUrlMasked ? MaskRemoteUrl(r.Url) : r.Url
+                })
+                .ToList(),
+
+            Tags = repo.Tags.Select(t => t.FriendlyName).ToList()
+        };
+    }
+
+    /// <summary>
     /// Pull実行（リモートの変更をローカルに取り込む）
     /// </summary>
-    public async Task<IGitPullResult> PullAsync(string repositoryKey, string repoPath)
+    public async Task<GitPullResult> PullAsync(string repositoryKey, string repoPath)
     {
         return await Task.Run(() =>
         {
@@ -110,7 +184,7 @@ public class GitOperationService : IGitOperationService
     /// <summary>
     /// Commit実行（単一ファイル）
     /// </summary>
-    public async Task<IGitCommitResult> CommitAsync(
+    public async Task<GitCommitResult> CommitAsync(
         string repositoryKey,
         string repoPath,
         string filePath,
@@ -174,7 +248,7 @@ public class GitOperationService : IGitOperationService
     /// <summary>
     /// Commit実行（全変更を一括コミット）
     /// </summary>
-    public async Task<IGitCommitResult> CommitAllAsync(
+    public async Task<GitCommitResult> CommitAllAsync(
         string repositoryKey,
         string repoPath,
         string? customMessage = null)
@@ -249,7 +323,7 @@ public class GitOperationService : IGitOperationService
     /// <summary>
     /// Push実行（コミット済み変更をリモートにプッシュ）
     /// </summary>
-    public async Task<IGitPushResult> PushAsync(string repositoryKey, string repoPath)
+    public async Task<GitPushResult> PushAsync(string repositoryKey, string repoPath)
     {
         return await Task.Run(() =>
         {
@@ -323,7 +397,7 @@ public class GitOperationService : IGitOperationService
     /// <summary>
     /// Tag作成（軽量タグまたは注釈付きタグ）
     /// </summary>
-    public async Task<IGitTagResult> CreateTagAsync(
+    public async Task<GitTagResult> CreateTagAsync(
         string repositoryKey,
         string repoPath,
         string tagName,
@@ -406,7 +480,7 @@ public class GitOperationService : IGitOperationService
     /// <summary>
     /// Tag をリモートにプッシュ
     /// </summary>
-    public async Task<IGitPushResult> PushTagAsync(
+    public async Task<GitPushResult> PushTagAsync(
         string repositoryKey,
         string repoPath,
         string tagName)
@@ -495,7 +569,7 @@ public class GitOperationService : IGitOperationService
     /// <summary>
     /// CommitAndPush実行（単一ファイル）
     /// </summary>
-    public async Task<IGitCommitAndPushResult> CommitAndPushAsync(
+    public async Task<GitCommitAndPushResult> CommitAndPushAsync(
         string repositoryKey,
         string repoPath,
         string filePath,
@@ -535,7 +609,7 @@ public class GitOperationService : IGitOperationService
     /// <summary>
     /// CommitAndPush実行（全変更を一括）
     /// </summary>
-    public async Task<IGitCommitAndPushResult> CommitAllAndPushAsync(
+    public async Task<GitCommitAndPushResult> CommitAllAndPushAsync(
         string repositoryKey,
         string repoPath,
         string? customMessage = null)
@@ -585,7 +659,7 @@ public class GitOperationService : IGitOperationService
     /// <summary>
     /// CreateAndPushTag実行（タグ作成→プッシュを一括実行）
     /// </summary>
-    public async Task<IGitTagResult> CreateAndPushTagAsync(
+    public async Task<GitTagResult> CreateAndPushTagAsync(
         string repositoryKey,
         string repoPath,
         string tagName,
@@ -619,4 +693,77 @@ public class GitOperationService : IGitOperationService
     }
 
     #endregion
+
+    /// <summary>
+    /// リモートURLのマスキング
+    /// </summary>
+    /// <param name="url"> リモートURL </param>
+    /// <returns> マスク済みURL </returns>
+    /// <remarks>
+    /// GitHub/GitLab などのドメインのみを残し、ユーザー名・リポジトリ名などの秘匿情報をマスクする。
+    /// ローカルパスは常に "(local path)" を返す。
+    /// </remarks>
+    /// <example>
+    /// MaskRemoteUrl("https://github.com/yuu-git/ateliers-ai-mcp-service");
+    /// => "github.com/..."
+    /// 
+    /// MaskRemoteUrl("git@github.com:yuu-git/repo.git");
+    /// => "github.com/..."
+    /// 
+    /// MaskRemoteUrl("https://gitlab.com/group/repo");
+    /// => "gitlab.com/..."
+    /// 
+    /// MaskRemoteUrl(@"C:\Repos\PrivateRepo");
+    /// => "(local path)"
+    /// 
+    /// MaskRemoteUrl("file:///home/user/repos/test");
+    /// => "(local path)"
+    ///
+    /// MaskRemoteUrl("something-strange");
+    /// => "(masked)"
+    /// </example>
+    private string MaskRemoteUrl(string url)
+    {
+        if (string.IsNullOrWhiteSpace(url))
+            return string.Empty;
+
+        // ローカルパス or file://
+        if (url.StartsWith("file://", StringComparison.OrdinalIgnoreCase) ||
+            Path.IsPathRooted(url))
+        {
+            return "(local path)";
+        }
+
+        try
+        {
+            // HTTPS 形式の場合
+            if (Uri.TryCreate(url, UriKind.Absolute, out var uri))
+            {
+                return $"{uri.Host}/...";
+            }
+        }
+        catch
+        {
+            // 無視して次の処理へ
+        }
+
+        // SSH 形式: git@github.com:user/repo.git
+        // パターン: ユーザー名@ホスト名:
+        var sshPattern = @"^[\w\-]+@([\w\.\-]+):";
+        var match = System.Text.RegularExpressions.Regex.Match(url, sshPattern);
+        if (match.Success)
+        {
+            return $"{match.Groups[1].Value}/...";
+        }
+
+        // 最終fallback: ドメインだけ抽出（雑だけど安全）
+        var domainMatch = System.Text.RegularExpressions.Regex.Match(url, @"([\w\-]+\.[\w\.\-]+)");
+        if (domainMatch.Success)
+        {
+            return $"{domainMatch.Groups[1].Value}/...";
+        }
+
+        return "(masked)";
+    }
+
 }
