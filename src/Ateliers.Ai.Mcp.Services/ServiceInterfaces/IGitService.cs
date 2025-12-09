@@ -7,6 +7,26 @@ namespace Ateliers.Ai.Mcp.Services;
 /// </summary>
 public interface IGitService
 {
+
+    /// <summary>
+    /// リポジトリキー一覧を取得
+    /// </summary>
+    public IEnumerable<string> GetRepositoryKeys();
+
+    /// <summary>
+    /// リポジトリが存在するかどうか
+    /// </summary>
+    /// <param name="repositoryKey">リポジトリキー </param>
+    /// <returns>存在する場合はtrue、それ以外はfalse</returns>
+    public bool RepositoryExists(string repositoryKey);
+
+    /// <summary>
+    /// リポジトリサマリを取得
+    /// </summary>
+    /// <param name="repositoryKey">リポジトリキー </param>
+    /// <returns> リポジトリ情報、存在しない場合はnull </returns>
+    public IGitRepositorySummary? GetRepositoryInfo(string repositoryKey);
+
     #region 基本Git操作
 
     /// <summary>
