@@ -115,3 +115,7 @@ appsettings.*.json
 # MCP generated notes (user data)
 notes/
 *.backup
+
+# voicevox native resources
+voicevox_core/
+**/voicevox_core/

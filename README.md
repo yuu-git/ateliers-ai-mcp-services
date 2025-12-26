@@ -22,6 +22,9 @@ dotnet add package Ateliers.Ai.Mcp.Services.LocalFs
 
 # Git operations (LibGit2Sharp)
 dotnet add package Ateliers.Ai.Mcp.Services.Git
+
+# Voice synthesis (VOICEVOX)
+dotnet add package Ateliers.Ai.Mcp.Services.Voicevox
 ```
 
 ## Features
@@ -31,6 +34,33 @@ dotnet add package Ateliers.Ai.Mcp.Services.Git
 - **GitHub** - Repository file operations via GitHub API
 - **LocalFs** - Local file system operations with directory exclusion
 - **Git** - Git operations (pull, push, commit, tag) with multi-platform credential support
+- **Voicevox** - Local voice synthesis using the VOICEVOX engine
+*(designed for MCP-based automation and content generation)*
+
+## Voicevox Service Notes (Windows)
+
+The Voicevox service uses VOICEVOX native libraries installed via the official
+VOICEVOX installer.
+
+No PATH modification is required
+
+Native libraries are resolved at runtime using SetDllDirectory
+
+Only local environments with VOICEVOX installed can execute voice synthesis
+
+Typical installation path:
+```
+C:\Program Files\VOICEVOX\vv-engine
+```
+
+The OpenJTalk dictionary path is automatically detected under:
+```
+engine_internal\pyopenjtalk\open_jtalk_dic_utf_8-*
+```
+
+To reduce initialization time, loaded voice models (*.vvm) can be limited via
+service options.
+If not specified, all available models will be loaded.
 
 ## Dependencies
 

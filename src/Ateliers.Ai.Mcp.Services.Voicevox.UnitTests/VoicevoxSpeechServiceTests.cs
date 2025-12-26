@@ -6,18 +6,28 @@ namespace Ateliers.Ai.Mcp.Services.Voicevox.UnitTests;
 
 public sealed class VoicevoxSpeechServiceTests
 {
+    static VoicevoxSpeechServiceTests()
+    {
+        var path = @"C:\Program Files\VOICEVOX\vv-engine";
+        if (Directory.Exists(path))
+        {
+            NativeLibraryPath.Use(path);
+        }
+    }
+
     // ★ 環境に合わせて書き換えてください
     private const string ResourcePath =
-        @"C:\Program Files\VOICEVOX\vv-engine\voicevox_core.dll";
+        @"C:\Program Files\VOICEVOX\vv-engine";
 
     [Fact]
+    [Trait("Category", "Integration")]
     public async Task SynthesizeToFileAsync_WavFileIsGenerated()
     {
         // Arrange
         var options = new VoicevoxServiceOptions
         {
             ResourcePath = ResourcePath,
-            DefaultStyleId = 0
+            VoiceModelNames = new[] { "0.vmm" }
         };
 
         using var service = new VoicevoxSpeechService(options);

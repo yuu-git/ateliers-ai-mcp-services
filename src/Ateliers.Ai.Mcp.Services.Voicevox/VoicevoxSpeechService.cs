@@ -18,8 +18,7 @@ public sealed class VoicevoxSpeechService :
     {
         _defaultStyleId = options.DefaultStyleId;
 
-        var openJTalkDictPath =
-            Path.Combine(options.ResourcePath, "open_jtalk_dic_utf_8-1.11");
+        var openJTalkDictPath = ResolveOpenJTalkDictPath(options.ResourcePath);
 
         // OpenJTalk
         var result = OpenJtalk.New(openJTalkDictPath, out var openJtalk);
@@ -40,11 +39,43 @@ public sealed class VoicevoxSpeechService :
         EnsureOk(result);
 
         // Voice models
-        var matcher = new Matcher();
-        matcher.AddInclude("*.vvm");
+        var modelDir = Path.Combine(options.ResourcePath, "model");
 
-        foreach (var path in matcher.GetResultsInFullPath(
-                     Path.Combine(options.ResourcePath, "model")))
+        var matcher = new Matcher();
+        matcher.AddIncludePatterns(new[] { "*.vvm" });
+
+        var allModelPaths = matcher
+            .GetResultsInFullPath(modelDir)
+            .ToList();
+
+        IEnumerable<string> modelPathsToLoad;
+
+        if (options.VoiceModelNames is null || options.VoiceModelNames.Count == 0)
+        {
+            // 全読み込み（従来どおり）
+            modelPathsToLoad = allModelPaths;
+        }
+        else
+        {
+            // 指定モデルのみ
+            var normalizedNames = options.VoiceModelNames
+                .Select(n => Path.GetFileNameWithoutExtension(n))
+                .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+            modelPathsToLoad = allModelPaths
+                .Where(path =>
+                    normalizedNames.Contains(
+                        Path.GetFileNameWithoutExtension(path)));
+        }
+
+        if (!modelPathsToLoad.Any())
+        {
+            throw new InvalidOperationException(
+                "No matching voice models (*.vvm) were found. " +
+                "Please check VoiceModelNames in VoicevoxServiceOptions.");
+        }
+
+        foreach (var path in modelPathsToLoad)
         {
             result = VoiceModelFile.Open(path, out var voiceModel);
             EnsureOk(result);
@@ -107,6 +138,41 @@ public sealed class VoicevoxSpeechService :
         {
             throw new InvalidOperationException(result.ToMessage());
         }
+    }
+    private static string ResolveOpenJTalkDictPath(string resourcePath)
+    {
+        var baseDir = Path.Combine(
+            resourcePath,
+            "engine_internal",
+            "pyopenjtalk"
+        );
+
+        if (!Directory.Exists(baseDir))
+        {
+            throw new DirectoryNotFoundException(
+                $"pyopenjtalk directory not found: {baseDir}");
+        }
+
+        var dictDirs = Directory.EnumerateDirectories(
+            baseDir,
+            "open_jtalk_dic_utf_8-*",
+            SearchOption.TopDirectoryOnly
+        ).ToList();
+
+        if (dictDirs.Count == 0)
+        {
+            throw new DirectoryNotFoundException(
+                $"open_jtalk dictionary not found under: {baseDir}");
+        }
+
+        if (dictDirs.Count > 1)
+        {
+            // 将来の保険：一応警告だけ出す
+            // （基本は1つしか存在しない）
+            // Console.WriteLine("Multiple open_jtalk dictionaries found. Using the first one.");
+        }
+
+        return dictDirs[0];
     }
 
     public void Dispose()
