@@ -1,0 +1,196 @@
+﻿using Ateliers.Ai.Mcp.Services.GenericModels;
+using System.Diagnostics;
+using System.Text;
+
+namespace Ateliers.Ai.Mcp.Services.Marp;
+
+public sealed class MarpService : IMarpService
+{
+    private readonly MarpServiceOptions _options;
+
+    public MarpService(MarpServiceOptions options)
+    {
+        _options = options ?? throw new ArgumentNullException(nameof(options));
+
+        if (!File.Exists(_options.MarpExecutablePath) &&
+            !IsCommandAvailable(_options.MarpExecutablePath))
+        {
+            throw new InvalidOperationException(
+                $"Marp CLI not found: {_options.MarpExecutablePath}");
+        }
+
+    }
+
+    public string GenerateSlideMarkdown(string sourceMarkdown)
+    {
+        var (frontmatter, bodyLines) = SplitFrontmatter(sourceMarkdown);
+
+        bodyLines = NormalizeHorizontalRules(bodyLines);
+
+        var lines = sourceMarkdown
+            .Split('\n')
+            .Select(l => l.TrimEnd())
+            .ToList();
+
+        var slides = new List<List<string>>();
+        List<string>? currentSlide = null;
+
+        foreach (var line in lines)
+        {
+            if (line.StartsWith("# "))
+            {
+                currentSlide = new List<string>();
+                slides.Add(currentSlide);
+            }
+
+            currentSlide ??= new List<string>();
+            currentSlide.Add(line);
+        }
+
+        var slideCount = slides.Count + 1;
+
+        if (slideCount < 2)
+        {
+            throw new InvalidOperationException(
+                "At least 2 slides are required for presentation.");
+        }
+
+        var sb = new StringBuilder();
+
+        // Frontmatter
+        sb.AppendLine("---");
+        sb.AppendLine("marp: true");
+        sb.AppendLine("paginate: true");
+        sb.AppendLine("---");
+        sb.AppendLine();
+
+        for (int i = 0; i < slides.Count; i++)
+        {
+            if (i > 0)
+            {
+                sb.AppendLine();
+                sb.AppendLine("---");
+                sb.AppendLine();
+            }
+
+            foreach (var line in slides[i])
+            {
+                sb.AppendLine(line);
+            }
+        }
+
+        return sb.ToString();
+    }
+
+    public async Task<IReadOnlyList<string>> RenderToPngAsync(
+        string slideMarkdown,
+        CancellationToken cancellationToken = default)
+    {
+        var marpRoot = ResolveMarpOutputRoot();
+        Directory.CreateDirectory(marpRoot);
+
+        var execDirName = DateTime.Now.ToString("yyyyMMdd_HHmmssfff");
+        var execDir = Path.Combine(marpRoot, execDirName);
+        Directory.CreateDirectory(execDir);
+
+        var inputPath = Path.Combine(execDir, "deck.md");
+        await File.WriteAllTextAsync(inputPath, slideMarkdown, cancellationToken);
+
+        var outputPrefix = Path.Combine(execDir, "slide.png");
+
+        var psi = new ProcessStartInfo
+        {
+            FileName = _options.MarpExecutablePath,
+            Arguments =
+                $"\"{inputPath}\" --images png --output \"{outputPrefix}\"",
+            RedirectStandardOutput = true,
+            RedirectStandardError = true,
+            UseShellExecute = false,
+            CreateNoWindow = true
+        };
+
+        using var process = Process.Start(psi)!;
+        await process.WaitForExitAsync(cancellationToken);
+
+        if (process.ExitCode != 0)
+        {
+            var error = await process.StandardError.ReadToEndAsync(cancellationToken);
+            throw new InvalidOperationException($"Marp failed: {error}");
+        }
+
+        return Directory
+            .EnumerateFiles(execDir, "*.png")
+            .OrderBy(p => p)
+            .ToList();
+    }
+
+
+
+    private static bool IsCommandAvailable(string command)
+    {
+        try
+        {
+            var psi = new ProcessStartInfo
+            {
+                FileName = command,
+                Arguments = "--version",
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                UseShellExecute = false,
+                CreateNoWindow = true
+            };
+            using var process = Process.Start(psi);
+            process?.WaitForExit(3000);
+            return process?.ExitCode == 0;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    private static (string? frontmatter, List<string> bodyLines) SplitFrontmatter(string markdown)
+    {
+        var lines = markdown.Split('\n').Select(l => l.TrimEnd('\r')).ToList();
+
+        if (lines.Count >= 3 && lines[0].Trim() == "---")
+        {
+            // find the closing '---'
+            for (int i = 1; i < lines.Count; i++)
+            {
+                if (lines[i].Trim() == "---")
+                {
+                    var fm = string.Join("\n", lines.Take(i + 1)) + "\n";
+                    var body = lines.Skip(i + 1).ToList();
+                    return (fm, body);
+                }
+            }
+        }
+
+        return (null, lines);
+    }
+
+    private static List<string> NormalizeHorizontalRules(List<string> bodyLines)
+    {
+        // Replace HR line '---' to '***' to avoid accidental slide separators.
+        for (int i = 0; i < bodyLines.Count; i++)
+        {
+            if (bodyLines[i].Trim() == "---")
+            {
+                bodyLines[i] = "***";
+            }
+        }
+
+        return bodyLines;
+    }
+
+    private string ResolveMarpOutputRoot()
+    {
+        var root = !string.IsNullOrWhiteSpace(_options.OutputRootDirectory)
+            ? _options.OutputRootDirectory
+            : Path.GetTempPath();
+
+        return Path.Combine(root, _options.MarpDirectoryName);
+    }
+
+}

@@ -8,12 +8,12 @@
 
     <!-- NuGet パッケージ情報 -->
     <Version>0.1.0</Version>
-    <PackageId>Ateliers.Ai.Mcp.Services.Voicevoxt</PackageId>
+    <PackageId>Ateliers.Ai.Mcp.Services.Voicevox</PackageId>
     <Authors>ateliers</Authors>
     <Company>ateliers.dev</Company>
     <Product>Ateliers AI MCP</Product>
-    <Description>voicevoxt system service for Ateliers AI Model Context Protocol (MCP) implementation</Description>
-    <PackageTags>mcp;ai;voicevoxt;local</PackageTags>
+    <Description>voicevox system service for Ateliers AI Model Context Protocol (MCP) implementation</Description>
+    <PackageTags>mcp;ai;voicevox;local</PackageTags>
     <PackageProjectUrl>https://github.com/yuu-git/ateliers-ai-mcp-services</PackageProjectUrl>
     <RepositoryUrl>https://github.com/yuu-git/ateliers-ai-mcp-services</RepositoryUrl>
     <RepositoryType>git</RepositoryType>

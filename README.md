@@ -25,6 +25,9 @@ dotnet add package Ateliers.Ai.Mcp.Services.Git
 
 # Voice synthesis (VOICEVOX)
 dotnet add package Ateliers.Ai.Mcp.Services.Voicevox
+
+# Marp presentation generation
+dotnet add package Ateliers.Ai.Mcp.Services.Marp
 ```
 
 ## Features
@@ -35,6 +38,7 @@ dotnet add package Ateliers.Ai.Mcp.Services.Voicevox
 - **LocalFs** - Local file system operations with directory exclusion
 - **Git** - Git operations (pull, push, commit, tag) with multi-platform credential support
 - **Voicevox** - Local voice synthesis using the VOICEVOX engine
+- **Marp** - Presentation generation using Marp CLI
 *(designed for MCP-based automation and content generation)*
 
 ## Voicevox Service Notes (Windows)
@@ -61,6 +65,22 @@ engine_internal\pyopenjtalk\open_jtalk_dic_utf_8-*
 To reduce initialization time, loaded voice models (*.vvm) can be limited via
 service options.
 If not specified, all available models will be loaded.
+
+## Marp Service Notes
+The Marp service requires Marp CLI to be installed and accessible in the system PATH.
+Install Marp CLI via npm:
+```
+npm install -g @marp-team/marp-cli
+```
+
+and ensure it is available in your PATH environment variable.
+MarpServiceOptions allows specifying additional CLI arguments for customization:
+```
+var options = new MarpServiceOptions
+{
+	MarpExecutablePath = {your_marp_cli_path}
+};
+```
 
 ## Dependencies
 
