@@ -28,6 +28,9 @@ dotnet add package Ateliers.Ai.Mcp.Services.Voicevox
 
 # Marp presentation generation
 dotnet add package Ateliers.Ai.Mcp.Services.Marp
+
+# FFmpeg support for media processing
+dotnet add package Ateliers.Ai.Mcp.Services.Ffmpeg
 ```
 
 ## Features
@@ -39,6 +42,7 @@ dotnet add package Ateliers.Ai.Mcp.Services.Marp
 - **Git** - Git operations (pull, push, commit, tag) with multi-platform credential support
 - **Voicevox** - Local voice synthesis using the VOICEVOX engine
 - **Marp** - Presentation generation using Marp CLI
+- **Ffmpeg** - Media processing using FFmpeg
 *(designed for MCP-based automation and content generation)*
 
 ## Voicevox Service Notes (Windows)
@@ -81,6 +85,10 @@ var options = new MarpServiceOptions
 	MarpExecutablePath = {your_marp_cli_path}
 };
 ```
+
+## FFmpeg Service Notes
+The FFmpeg service requires FFmpeg to be installed and accessible in the system PATH.
+Download FFmpeg from the official website: https://ffmpeg.org/download.html
 
 ## Dependencies
 

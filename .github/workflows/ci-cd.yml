@@ -69,6 +69,7 @@ jobs:
           dotnet pack src/Ateliers.Ai.Mcp.Services.Git/Ateliers.Ai.Mcp.Services.Git.csproj --configuration ${{ env.CONFIGURATION }} --no-build --output ./packages
           dotnet pack src/Ateliers.Ai.Mcp.Services.Voicevox/Ateliers.Ai.Mcp.Services.Voicevox.csproj --configuration ${{ env.CONFIGURATION }} --no-build --output ./packages
           dotnet pack src/Ateliers.Ai.Mcp.Services.Marp/Ateliers.Ai.Mcp.Services.Marp.csproj --configuration ${{ env.CONFIGURATION }} --no-build --output ./packages
+          dotnet pack src/Ateliers.Ai.Mcp.Services.Ffmpeg/Ateliers.Ai.Mcp.Services.Ffmpeg.csproj --configuration ${{ env.CONFIGURATION }} --no-build --output ./packages
 
       - name: Publish to nuget.org
         run: dotnet nuget push ./packages/*.nupkg --source https://api.nuget.org/v3/index.json --api-key ${{ secrets.NUGET_API_KEY }} --skip-duplicate
