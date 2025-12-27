@@ -10,13 +10,13 @@ namespace Ateliers.Ai.Mcp.Services.Voicevox;
 public sealed class VoicevoxSpeechService :
     IVoicevoxSpeechService, IDisposable
 {
+    private readonly VoicevoxServiceOptions _options;
     private readonly Synthesizer _synthesizer;
-    private readonly uint _defaultStyleId;
     private readonly SemaphoreSlim _gate = new(1, 1);
 
     public VoicevoxSpeechService(VoicevoxServiceOptions options)
     {
-        _defaultStyleId = options.DefaultStyleId;
+        _options = options ?? throw new ArgumentNullException(nameof(options));
 
         var openJTalkDictPath = ResolveOpenJTalkDictPath(options.ResourcePath);
 
@@ -97,7 +97,7 @@ public sealed class VoicevoxSpeechService :
         await _gate.WaitAsync(cancellationToken);
         try
         {
-            var sid = styleId ?? _defaultStyleId;
+            var sid = styleId ?? _options.DefaultStyleId;
 
             var result = _synthesizer.Tts(
                 text,
@@ -118,14 +118,20 @@ public sealed class VoicevoxSpeechService :
 
     public async Task<string> SynthesizeToFileAsync(
         string text,
-        string outputWavPath,
+        string outputWavFileName,
         uint? styleId = null,
         CancellationToken cancellationToken = default)
     {
         var wav = await SynthesizeAsync(text, styleId, cancellationToken);
 
-        Directory.CreateDirectory(
-            Path.GetDirectoryName(outputWavPath)!);
+        var voicevoxRoot = ResolveVoicevoxOutputRoot();
+        Directory.CreateDirectory(voicevoxRoot);
+
+        var execDirName = DateTime.Now.ToString("yyyyMMdd_HHmmssfff");
+        var execDir = Path.Combine(voicevoxRoot, execDirName);
+        Directory.CreateDirectory(execDir);
+
+        var outputWavPath = Path.Combine(execDir, outputWavFileName);
 
         await File.WriteAllBytesAsync(outputWavPath, wav, cancellationToken);
 
@@ -173,6 +179,15 @@ public sealed class VoicevoxSpeechService :
         }
 
         return dictDirs[0];
+    }
+
+    private string ResolveVoicevoxOutputRoot()
+    {
+        var root = !string.IsNullOrWhiteSpace(_options.OutputRootDirectory)
+            ? _options.OutputRootDirectory
+            : Path.GetTempPath();
+
+        return Path.Combine(root, _options.VoicevoxDirectoryName);
     }
 
     public void Dispose()

@@ -27,38 +27,27 @@ public sealed class VoicevoxSpeechServiceTests
         var options = new VoicevoxServiceOptions
         {
             ResourcePath = ResourcePath,
-            VoiceModelNames = new[] { "0.vmm" }
+            VoiceModelNames = new[] { "0.vmm" },
+            VoicevoxDirectoryName = "voicevox"
         };
 
         using var service = new VoicevoxSpeechService(options);
 
-        var outputDir = Path.Combine(
-            Path.GetTempPath(),
-            "voicevox_test");
-
-        var outputPath = Path.Combine(
-            outputDir,
-            "test.wav");
-
-        if (File.Exists(outputPath))
-        {
-            File.Delete(outputPath);
-        }
+        var wavFileName = $"test.wav";
 
         // Act
         var resultPath = await service.SynthesizeToFileAsync(
             text: "これはテスト音声です。",
-            outputWavPath: outputPath);
+            outputWavFileName: wavFileName);
 
         // Assert
-        Assert.Equal(outputPath, resultPath);
-        Assert.True(File.Exists(outputPath));
+        Assert.True(File.Exists(resultPath));
 
-        var fileInfo = new FileInfo(outputPath);
+        var fileInfo = new FileInfo(resultPath);
         Assert.True(fileInfo.Length > 0);
 
         // Optional: wav ヘッダ確認（超軽量チェック）
-        using var fs = File.OpenRead(outputPath);
+        using var fs = File.OpenRead(resultPath);
         var header = new byte[4];
         await fs.ReadAsync(header, 0, 4);
 

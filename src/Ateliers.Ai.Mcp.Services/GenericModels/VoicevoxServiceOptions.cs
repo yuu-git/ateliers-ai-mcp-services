@@ -20,5 +20,17 @@ public sealed class VoicevoxServiceOptions
     /// VoiceModelNames = new[] { "0.vmm", "1.vvm" };
     /// </example>
     public IReadOnlyCollection<string>? VoiceModelNames { get; init; }
+
+    /// <summary>
+    /// Root directory for all generated outputs.
+    /// If null or empty, %TEMP% will be used.
+    /// </summary>
+    public string? OutputRootDirectory { get; init; }
+
+    /// <summary>
+    /// Sub directory name for VOICEVOX outputs.
+    /// Default: "marp"
+    /// </summary>
+    public string VoicevoxDirectoryName { get; init; } = "voicevox";
 }
 
