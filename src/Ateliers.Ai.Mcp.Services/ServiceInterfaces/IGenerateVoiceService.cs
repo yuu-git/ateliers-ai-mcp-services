@@ -7,7 +7,7 @@ public interface IGenerateVoiceService
         uint? styleId = null,
         CancellationToken cancellationToken = default);
 
-    Task<IEnumerable<string>> GenerateVoiceFilesAsync(
+    Task<IReadOnlyList<string>> GenerateVoiceFilesAsync(
     IEnumerable<IGenerateVoiceRequest> requests,
     uint? styleId = null,
     CancellationToken cancellationToken = default);

@@ -106,7 +106,7 @@ public sealed class VoicevoxService :
         return outputWavPath;
     }
 
-    public async Task<IEnumerable<string>> GenerateVoiceFilesAsync(
+    public async Task<IReadOnlyList<string>> GenerateVoiceFilesAsync(
     IEnumerable<IGenerateVoiceRequest> requests,
     uint? styleId = null,
     CancellationToken cancellationToken = default)
