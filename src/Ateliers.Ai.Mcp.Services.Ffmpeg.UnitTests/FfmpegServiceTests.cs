@@ -10,7 +10,7 @@ public class FfmpegServiceTests
     public async Task ComposeAsync_TwoSlides_CreatesVideo()
     {
         var service = new FfmpegService(
-            new MediaComposerOptions
+            new FfmpegServiceOptions
             {
                 FfmpegExecutablePath = "C:\\Program Files\\FFmpeg\\bin\\ffmpeg.exe"
             });
@@ -18,7 +18,7 @@ public class FfmpegServiceTests
         var d1 = GetWavDurationSeconds(".\\TestDatas\\P001\\voice.001.wav");
         var d2 = GetWavDurationSeconds(".\\TestDatas\\P001\\voice.002.wav");
 
-        var request = new PresentationVideoRequest(
+        var request = new GenerateVideoRequest(
             [
                 new SlideAudioPair(".\\TestDatas\\P001\\slide.001.png", ".\\TestDatas\\P001\\voice.001.wav", d1+0.1d),
                 new SlideAudioPair(".\\TestDatas\\P001\\slide.002.png", ".\\TestDatas\\P001\\voice.002.wav", d2+0.1d),

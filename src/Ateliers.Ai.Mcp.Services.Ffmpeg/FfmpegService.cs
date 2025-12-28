@@ -6,27 +6,27 @@ namespace Ateliers.Ai.Mcp.Services.Ffmpeg;
 
 public sealed class FfmpegService : IMediaComposerService
 {
-    private readonly MediaComposerOptions _options;
+    private readonly IFfmpegServiceOptions _options;
 
-    public FfmpegService(MediaComposerOptions options)
+    public FfmpegService(IFfmpegServiceOptions options)
     {
         _options = options;
     }
 
     public async Task<string> ComposeAsync(
-        PresentationVideoRequest request,
+        GenerateVideoRequest request,
         string outputFileName,
         CancellationToken cancellationToken = default)
     {
         if (request.Slides.Count == 0)
             throw new InvalidOperationException("At least one slide is required.");
 
-        var workDir = PrepareWorkingDirectory();
+        var outputDir = _options.CreateWorkDirectory(_options.MediaOutputDirectoryName, DateTime.Now.ToString("yyyyMMdd_HHmmssfff"));
 
-        var localSlides = CopyAssetsToWorkingDir(request.Slides, workDir);
-        var imagesList = Path.Combine(workDir, "images.txt");
-        var audioList = Path.Combine(workDir, "audio.txt");
-        var outputPath = Path.Combine(workDir, outputFileName);
+        var localSlides = CopyAssetsToWorkingDir(request.Slides, outputDir);
+        var imagesList = Path.Combine(outputDir, "images.txt");
+        var audioList = Path.Combine(outputDir, "audio.txt");
+        var outputPath = Path.Combine(outputDir, outputFileName);
 
         CreateImagesList(localSlides, imagesList);
         CreateAudioList(localSlides, audioList);
@@ -39,18 +39,6 @@ public sealed class FfmpegService : IMediaComposerService
     // ------------------------
     // helpers
     // ------------------------
-
-    private string PrepareWorkingDirectory()
-    {
-        var root = _options.OutputRootDirectory ?? Path.GetTempPath();
-        var dir = Path.Combine(
-            root,
-            _options.MediaDirectoryName,
-            DateTime.Now.ToString("yyyyMMdd_HHmmssfff"));
-
-        Directory.CreateDirectory(dir);
-        return dir;
-    }
 
     private static void CreateImagesList(
         IReadOnlyList<SlideAudioPair> slides,

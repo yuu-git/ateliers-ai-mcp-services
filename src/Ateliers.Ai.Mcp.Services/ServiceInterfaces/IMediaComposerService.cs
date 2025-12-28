@@ -5,7 +5,7 @@ namespace Ateliers.Ai.Mcp.Services;
 public interface IMediaComposerService
 {
     Task<string> ComposeAsync(
-        PresentationVideoRequest request,
+        GenerateVideoRequest request,
         string outputFileName,
         CancellationToken cancellationToken = default);
 }
