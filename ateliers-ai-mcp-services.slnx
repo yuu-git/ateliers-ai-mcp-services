@@ -6,7 +6,7 @@
     <File Path="README.md" />
   </Folder>
   <Folder Name="/src/">
-    <Project Path="src/Ateliers.Ai.Mcp.Services.FFmpeg/Ateliers.Ai.Mcp.Services.Ffmpeg.csproj" Id="57eee62a-7c3e-42b0-aaf2-7c8a5c68cb35" />
+    <Project Path="src/Ateliers.Ai.Mcp.Services.Ffmpeg/Ateliers.Ai.Mcp.Services.Ffmpeg.csproj" Id="57eee62a-7c3e-42b0-aaf2-7c8a5c68cb35" />
     <Project Path="src/Ateliers.Ai.Mcp.Services.Git/Ateliers.Ai.Mcp.Services.Git.csproj" Id="035d1450-f062-4b0e-8041-12a5e0794fc0" />
     <Project Path="src/Ateliers.Ai.Mcp.Services.GitHub/Ateliers.Ai.Mcp.Services.GitHub.csproj" Id="a4f40ff8-4601-4096-96b8-6bf27785165f" />
     <Project Path="src/Ateliers.Ai.Mcp.Services.LocalFs/Ateliers.Ai.Mcp.Services.LocalFs.csproj" Id="08e94b54-5897-4f44-8861-098ddd38783b" />
@@ -17,7 +17,7 @@
     <Project Path="src/Ateliers.Ai.Mcp.Services/Ateliers.Ai.Mcp.Services.csproj" />
   </Folder>
   <Folder Name="/src/unit tests/">
-    <Project Path="src/Ateliers.Ai.Mcp.Services.FFmpeg.UnitTests/Ateliers.Ai.Mcp.Services.Ffmpeg.UnitTests.csproj" Id="e8ff03a9-f080-429c-850a-0a2327494c66" />
+    <Project Path="src/Ateliers.Ai.Mcp.Services.Ffmpeg.UnitTests/Ateliers.Ai.Mcp.Services.Ffmpeg.UnitTests.csproj" Id="e8ff03a9-f080-429c-850a-0a2327494c66" />
     <Project Path="src/Ateliers.Ai.Mcp.Services.Git.UnitTests/Ateliers.Ai.Mcp.Services.Git.UnitTests.csproj" Id="6fab2421-cd0f-4d7a-84a3-99e034b5181e" />
     <Project Path="src/Ateliers.Ai.Mcp.Services.GitHub.UnitTests/Ateliers.Ai.Mcp.Services.GitHub.UnitTests.csproj" Id="1eee12dc-7804-46c5-babf-bf97684496cf" />
     <Project Path="src/Ateliers.Ai.Mcp.Services.LocalFs.UnitTests/Ateliers.Ai.Mcp.Services.LocalFs.UnitTests.csproj" Id="0f0f0275-9d1a-4cfc-a878-f0469849ac2c" />
