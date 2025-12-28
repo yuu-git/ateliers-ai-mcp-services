@@ -3,86 +3,77 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 [![.NET](https://img.shields.io/badge/.NET-10.0-purple.svg)](https://dotnet.microsoft.com/)
 
-Service layer implementations for [Model Context Protocol (MCP)](https://modelcontextprotocol.io/) in C#.
+C# による [Model Context Protocol (MCP)] のサービス層実装です。
 
-## Packages
+## パッケージ
 
 ```bash
-# Base services and interfaces
+# 基本サービスとインターフェース
 dotnet add package Ateliers.Ai.Mcp.Services
 
-# Notion API integration
+# Notion API 連携
 dotnet add package Ateliers.Ai.Mcp.Services.Notion
 
-# GitHub API integration
+# GitHub API 連携
 dotnet add package Ateliers.Ai.Mcp.Services.GitHub
 
-# Local file system operations
+# ローカルファイルシステム操作
 dotnet add package Ateliers.Ai.Mcp.Services.LocalFs
 
-# Git operations (LibGit2Sharp)
+# Git 操作 (LibGit2Sharp)
 dotnet add package Ateliers.Ai.Mcp.Services.Git
 
-# Voice synthesis (VOICEVOX)
+# 音声合成 (VOICEVOX)
 dotnet add package Ateliers.Ai.Mcp.Services.Voicevox
 
-# Marp presentation generation
+# Marp プレゼンテーション生成
 dotnet add package Ateliers.Ai.Mcp.Services.Marp
 
-# FFmpeg support for media processing
+# メディア処理用 FFmpeg サポート
 dotnet add package Ateliers.Ai.Mcp.Services.Ffmpeg
 
-# PresentationVideo Generator
+# プレゼンテーション動画生成
 dotnet add package Ateliers.Ai.Mcp.Tools.PresentationVideo
 ```
 
-## Features
+## 機能
 
-- **Services** - Base interfaces and configuration models
-- **Notion** - Tasks, Ideas, and Reading List management via Notion API
-- **GitHub** - Repository file operations via GitHub API
-- **LocalFs** - Local file system operations with directory exclusion
-- **Git** - Git operations (pull, push, commit, tag) with multi-platform credential support
-- **Voicevox** - Local voice synthesis using the VOICEVOX engine
-- **Marp** - Presentation generation using Marp CLI
-- **Ffmpeg** - Media processing using FFmpeg
-- **PresentationVideo** - Generate presentation videos from Marp slides and voice synthesis
-*(designed for MCP-based automation and content generation)*
+- **Services** - 基本インターフェースと設定モデル
+- **Notion** - Notion API を使用したタスク、アイデア、読書リストの管理
+- **GitHub** - GitHub API を使用したリポジトリファイル操作
+- **LocalFs** - ディレクトリ除外機能付きローカルファイルシステム操作
+- **Git** - マルチプラットフォーム認証情報サポート付き Git 操作（pull、push、commit、tag）
+- **Voicevox** - VOICEVOX エンジンを使用したローカル音声合成
+- **Marp** - Marp CLI を使用したプレゼンテーション生成
+- **Ffmpeg** - FFmpeg を使用したメディア処理
+- **PresentationVideo** - スライドと音声合成からプレゼンテーション動画を生成
 
-## Voicevox Service Notes (Windows)
+## Voicevox サービスの注意事項（Windows）
 
-The Voicevox service uses VOICEVOX native libraries installed via the official
-VOICEVOX installer.
+Voicevox サービスは、公式 VOICEVOX インストーラーでインストールされたネイティブライブラリを使用します。
+PATH の変更は不要です。
 
-No PATH modification is required
+voicevox_core は色々と制御をする必要があるため、今のところ使用していません。
+将来的には VOICEVOX そのものでも、voicevox_core でも動作するようにしたいと考えています。
 
-Native libraries are resolved at runtime using SetDllDirectory
-
-Only local environments with VOICEVOX installed can execute voice synthesis
-
-Typical installation path:
+VOICEVOX フォルダ下の vv-engine フォルダパスをサービスオプションで指定して下さい：
+標準的なインストールパス：
 ```
 C:\Program Files\VOICEVOX\vv-engine
 ```
 
-The OpenJTalk dictionary path is automatically detected under:
+OpenJTalk 辞書パスは以下の場所で自動検出されます：
 ```
 engine_internal\pyopenjtalk\open_jtalk_dic_utf_8-*
 ```
 
-To reduce initialization time, loaded voice models (*.vvm) can be limited via
-service options.
-If not specified, all available models will be loaded.
+初期化時間を短縮するため、読み込む音声モデル（*.vvm）をサービスオプションで制限できます。
+指定しない場合、すべての利用可能なモデルが読み込まれます。
 
-## Marp Service Notes
-The Marp service requires Marp CLI to be installed and accessible in the system PATH.
-Install Marp CLI via npm:
-```
-npm install -g @marp-team/marp-cli
-```
+## Marp サービスの注意事項
+Marp サービスには、Marp CLI のインストールが必要です。
 
-and ensure it is available in your PATH environment variable.
-MarpServiceOptions allows specifying additional CLI arguments for customization:
+Options クラスで CLI インスト―スパス引数を指定できます：
 ```
 var options = new MarpServiceOptions
 {
@@ -90,33 +81,40 @@ var options = new MarpServiceOptions
 };
 ```
 
-## FFmpeg Service Notes
-The FFmpeg service requires FFmpeg to be installed and accessible in the system PATH.
-Download FFmpeg from the official website: https://ffmpeg.org/download.html
+## FFmpeg サービスの注意事項
+FFmpeg サービスには、FFmpeg のインストールが必要です。
 
-## Dependencies
+Options クラスで FFmpeg インスト―スパス引数を指定できます：
+```
+var options = new FfmpegServiceOptions
+{
+	FfmpegExecutablePath = {your_ffmpeg_path}
+};
+```
 
-All packages depend on:
-- [Ateliers.Ai.Mcp.Core](https://www.nuget.org/packages/Ateliers.Ai.Mcp.Core/) - Core library
+## 依存関係
 
-## Ateliers AI MCP Ecosystem
+すべてのパッケージは以下に依存しています：
+- [Ateliers.Ai.Mcp.Core](https://www.nuget.org/packages/Ateliers.Ai.Mcp.Core/) - コアライブラリ
 
-- **Core** - Base interfaces and utilities
-- **Services** (this package) - Service layer implementations
-- **Tools** - MCP tool implementations
-- **processes** - MCP implementations
+## Ateliers AI MCP エコシステム
 
-## Documentation
+- **Core** - MCPエコシステム全ての基本インターフェースとユーティリティ
+- **Services**（このパッケージ）- サービス層実装
+- **Tools** - 複数の MCP サービスを組み合わせた MCP タスク単位の実装
+- **processes** - 各アプリケーション向けの MCP ツール実行ファイル（.exe）
 
-Visit **[ateliers.dev](https://ateliers.dev)** for full documentation, usage examples, and guides.
+## ドキュメント
 
-## Status
+完全なドキュメント、使用例、ガイドについては **[ateliers.dev](https://ateliers.dev)** をご覧ください。
 
-⚠️ **Development version (v0.x.x)** - API may change. Stable v1.0.0 coming soon.
+## ステータス
 
-## License
+⚠️ **開発版（v0.x.x）** - API は変更される可能性があります。安定版 v1.0.0 は近日公開予定です。
 
-MIT License - see [LICENSE](LICENSE) file for details.
+## ライセンス
+
+MIT ライセンス - 詳細は [LICENSE](LICENSE) ファイルをご覧ください。
 
 ---
 
