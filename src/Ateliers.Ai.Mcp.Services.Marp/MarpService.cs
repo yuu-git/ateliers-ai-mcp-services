@@ -11,13 +11,6 @@ public sealed class MarpService : IGenerateSlideService
     public MarpService(IMarpServiceOptions options)
     {
         _options = options ?? throw new ArgumentNullException(nameof(options));
-
-        if (!File.Exists(_options.MarpExecutablePath) &&
-            !IsCommandAvailable(_options.MarpExecutablePath))
-        {
-            throw new InvalidOperationException(
-                $"Marp CLI not found: {_options.MarpExecutablePath}");
-        }
     }
 
     public string GenerateSlideMarkdown(string sourceMarkdown)
@@ -84,6 +77,13 @@ public sealed class MarpService : IGenerateSlideService
         string slideMarkdown,
         CancellationToken cancellationToken = default)
     {
+        if (!File.Exists(_options.MarpExecutablePath) &&
+            !IsCommandAvailable(_options.MarpExecutablePath))
+        {
+            throw new InvalidOperationException(
+                $"Marp CLI not found: {_options.MarpExecutablePath}");
+        }
+
         var outputDir = _options.CreateWorkDirectory(_options.MarpOutputDirectoryName, DateTime.Now.ToString("yyyyMMdd_HHmmssfff"));
 
         var inputPath = Path.Combine(outputDir, "deck.md");
