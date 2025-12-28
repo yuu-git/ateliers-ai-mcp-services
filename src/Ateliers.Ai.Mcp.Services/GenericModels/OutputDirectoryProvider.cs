@@ -12,15 +12,23 @@ public class OutputDirectoryProvider : IOutputDirectoryProvider
     /// Root directory for all generated outputs.
     /// If null or empty, %TEMP% will be used.
     /// </summary>
-    public virtual string CreateWorkDirectory(string workDirectory)
+    public virtual string CreateWorkDirectory(string appName, string subDirectory = "")
     {
+        if (string.IsNullOrWhiteSpace(appName))
+        {
+            throw new ArgumentException("App name must be provided.", nameof(appName));
+        }
+
         var rootDir = string.IsNullOrWhiteSpace(OutputRootDirectory)
             ? Path.GetTempPath()
             : OutputRootDirectory;
 
-        var fullPath = Path.Combine(rootDir, workDirectory);
-        Directory.CreateDirectory(fullPath);
+        var workDirectory = string.IsNullOrWhiteSpace(subDirectory)
+            ? Path.Combine(rootDir, appName)
+            : Path.Combine(rootDir, appName, subDirectory);
 
-        return fullPath;
+        Directory.CreateDirectory(workDirectory);
+
+        return workDirectory;
     }
 }

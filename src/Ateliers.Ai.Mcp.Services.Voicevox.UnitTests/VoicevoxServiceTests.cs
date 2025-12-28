@@ -28,7 +28,7 @@ public sealed class VoicevoxServiceTests
         {
             ResourcePath = ResourcePath,
             VoiceModelNames = new[] { "0.vmm" },
-            VoicevoxDirectoryName = "voicevox"
+            VoicevoxOutputDirectoryName = "voicevox"
         };
 
         using var service = new VoicevoxService(options);

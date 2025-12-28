@@ -9,7 +9,7 @@ public class MarpServiceTests
     {
         var options = new MarpServiceOptions
         {
-            MarpExecutablePath = "C:\\Program Files\\Marp-CLI\\marp.exe"
+            MarpExecutablePath = "C:\\Program Files\\Marp-CLI\\marp.exe",
         };
 
         var source =
@@ -62,7 +62,7 @@ public class MarpServiceTests
 
     [Fact]
     [Trait("Category", "Integration")]
-    public void RenderToPngAsync_CreatesPngFile()
+    public async Task RenderToPngAsync_CreatesPngFile()
     {
         var options = new MarpServiceOptions
         {
@@ -82,7 +82,7 @@ public class MarpServiceTests
             """;
 
         var slideMarkdown = service.GenerateSlideMarkdown(sourceMarkdown);
-        var pngFiles = service.RenderToPngAsync(slideMarkdown).Result;
+        var pngFiles = await service.RenderToPngAsync(slideMarkdown);
 
         Assert.Equal(3, pngFiles.Count);
         Assert.True(pngFiles.All(f => f.EndsWith(".png", StringComparison.OrdinalIgnoreCase)));

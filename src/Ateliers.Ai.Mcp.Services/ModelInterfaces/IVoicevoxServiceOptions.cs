@@ -25,5 +25,5 @@ public interface IVoicevoxServiceOptions : IOutputDirectoryProvider
     /// <summary>
     /// Sub directory name for VOICEVOX outputs.
     /// </summary>
-    string VoicevoxDirectoryName { get; }
+    string VoicevoxOutputDirectoryName { get; }
 }

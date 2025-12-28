@@ -4,5 +4,5 @@ public interface IOutputDirectoryProvider
 {
     string? OutputRootDirectory { get; }
 
-    string CreateWorkDirectory(string workDirectory);
+    string CreateWorkDirectory(string appName, string subDirectory = "");
 }

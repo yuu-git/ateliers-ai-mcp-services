@@ -94,8 +94,7 @@ public sealed class VoicevoxService :
         uint? styleId = null,
         CancellationToken cancellationToken = default)
     {
-        var outputDirName = DateTime.Now.ToString("yyyyMMdd_HHmmssfff");
-        var outputDir = _options.CreateWorkDirectory(outputDirName);
+        var outputDir = _options.CreateWorkDirectory(_options.VoicevoxOutputDirectoryName, DateTime.Now.ToString("yyyyMMdd_HHmmssfff"));
 
         var outputWavPath = await SynthesizeToFileAsync(
             request.Text,
@@ -112,8 +111,7 @@ public sealed class VoicevoxService :
     uint? styleId = null,
     CancellationToken cancellationToken = default)
     {
-        var outputDirName = DateTime.Now.ToString("yyyyMMdd_HHmmssfff");
-        var outputDir = _options.CreateWorkDirectory(outputDirName);
+        var outputDir = _options.CreateWorkDirectory(_options.VoicevoxOutputDirectoryName, DateTime.Now.ToString("yyyyMMdd_HHmmssfff"));
 
         var outputPaths = new List<string>();
 

@@ -4,11 +4,11 @@ using System.Text;
 
 namespace Ateliers.Ai.Mcp.Services.Marp;
 
-public sealed class MarpService : IMarpService
+public sealed class MarpService : IGenerateSlideService
 {
-    private readonly MarpServiceOptions _options;
+    private readonly IMarpServiceOptions _options;
 
-    public MarpService(MarpServiceOptions options)
+    public MarpService(IMarpServiceOptions options)
     {
         _options = options ?? throw new ArgumentNullException(nameof(options));
 
@@ -18,7 +18,6 @@ public sealed class MarpService : IMarpService
             throw new InvalidOperationException(
                 $"Marp CLI not found: {_options.MarpExecutablePath}");
         }
-
     }
 
     public string GenerateSlideMarkdown(string sourceMarkdown)
@@ -86,17 +85,12 @@ public sealed class MarpService : IMarpService
         string slideMarkdown,
         CancellationToken cancellationToken = default)
     {
-        var marpRoot = ResolveMarpOutputRoot();
-        Directory.CreateDirectory(marpRoot);
+        var outputDir = _options.CreateWorkDirectory(_options.MarpOutputDirectoryName, DateTime.Now.ToString("yyyyMMdd_HHmmssfff"));
 
-        var execDirName = DateTime.Now.ToString("yyyyMMdd_HHmmssfff");
-        var execDir = Path.Combine(marpRoot, execDirName);
-        Directory.CreateDirectory(execDir);
-
-        var inputPath = Path.Combine(execDir, "deck.md");
+        var inputPath = Path.Combine(outputDir, "deck.md");
         await File.WriteAllTextAsync(inputPath, slideMarkdown, cancellationToken);
 
-        var outputPrefix = Path.Combine(execDir, "slide.png");
+        var outputPrefix = Path.Combine(outputDir, "slide.png");
 
         var psi = new ProcessStartInfo
         {
@@ -119,12 +113,10 @@ public sealed class MarpService : IMarpService
         }
 
         return Directory
-            .EnumerateFiles(execDir, "*.png")
+            .EnumerateFiles(outputDir, "*.png")
             .OrderBy(p => p)
             .ToList();
     }
-
-
 
     private static bool IsCommandAvailable(string command)
     {
@@ -183,14 +175,4 @@ public sealed class MarpService : IMarpService
 
         return bodyLines;
     }
-
-    private string ResolveMarpOutputRoot()
-    {
-        var root = !string.IsNullOrWhiteSpace(_options.OutputRootDirectory)
-            ? _options.OutputRootDirectory
-            : Path.GetTempPath();
-
-        return Path.Combine(root, _options.MarpDirectoryName);
-    }
-
 }

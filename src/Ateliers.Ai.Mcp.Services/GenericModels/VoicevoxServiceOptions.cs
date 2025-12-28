@@ -8,6 +8,6 @@ public sealed class VoicevoxServiceOptions : OutputDirectoryProvider, IVoicevoxS
 
     public IReadOnlyCollection<string>? VoiceModelNames { get; init; }
 
-    public string VoicevoxDirectoryName { get; init; } = "voicevox";
+    public string VoicevoxOutputDirectoryName { get; init; } = "voicevox";
 }
 

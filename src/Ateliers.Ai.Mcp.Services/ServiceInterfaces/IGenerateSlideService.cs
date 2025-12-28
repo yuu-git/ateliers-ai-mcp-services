@@ -1,6 +1,6 @@
 ﻿namespace Ateliers.Ai.Mcp.Services;
 
-public interface IMarpService
+public interface IGenerateSlideService
 {
     string GenerateSlideMarkdown(string sourceMarkdown);
 
