@@ -7,14 +7,14 @@ using VoicevoxCoreSharp.Core.Struct;
 
 namespace Ateliers.Ai.Mcp.Services.Voicevox;
 
-public sealed class VoicevoxSpeechService :
-    IVoicevoxSpeechService, IDisposable
+public sealed class VoicevoxService :
+    IGenerateVoiceService, IDisposable
 {
-    private readonly VoicevoxServiceOptions _options;
+    private readonly IVoicevoxServiceOptions _options;
     private readonly Synthesizer _synthesizer;
     private readonly SemaphoreSlim _gate = new(1, 1);
 
-    public VoicevoxSpeechService(VoicevoxServiceOptions options)
+    public VoicevoxService(IVoicevoxServiceOptions options)
     {
         _options = options ?? throw new ArgumentNullException(nameof(options));
 
@@ -89,7 +89,49 @@ public sealed class VoicevoxSpeechService :
         openJtalk.Dispose();
     }
 
-    public async Task<byte[]> SynthesizeAsync(
+    public async Task<string> GenerateVoiceFileAsync(
+        IGenerateVoiceRequest request,
+        uint? styleId = null,
+        CancellationToken cancellationToken = default)
+    {
+        var outputDirName = DateTime.Now.ToString("yyyyMMdd_HHmmssfff");
+        var outputDir = _options.CreateWorkDirectory(outputDirName);
+
+        var outputWavPath = await SynthesizeToFileAsync(
+            request.Text,
+            outputDir,
+            request.OutputWavFileName,
+            styleId,
+            cancellationToken);
+
+        return outputWavPath;
+    }
+
+    public async Task<IEnumerable<string>> GenerateVoiceFilesAsync(
+    IEnumerable<IGenerateVoiceRequest> requests,
+    uint? styleId = null,
+    CancellationToken cancellationToken = default)
+    {
+        var outputDirName = DateTime.Now.ToString("yyyyMMdd_HHmmssfff");
+        var outputDir = _options.CreateWorkDirectory(outputDirName);
+
+        var outputPaths = new List<string>();
+
+        foreach (var request in requests)
+        {
+            var outputWavPath = await SynthesizeToFileAsync(
+                request.Text,
+                outputDir,
+                request.OutputWavFileName,
+                styleId,
+                cancellationToken);
+            outputPaths.Add(outputWavPath);
+        }
+
+        return outputPaths;
+    }
+
+    private async Task<byte[]> SynthesizeAsync(
         string text,
         uint? styleId = null,
         CancellationToken cancellationToken = default)
@@ -116,22 +158,16 @@ public sealed class VoicevoxSpeechService :
         }
     }
 
-    public async Task<string> SynthesizeToFileAsync(
+    private async Task<string> SynthesizeToFileAsync(
         string text,
+        string outputDir,
         string outputWavFileName,
         uint? styleId = null,
         CancellationToken cancellationToken = default)
     {
         var wav = await SynthesizeAsync(text, styleId, cancellationToken);
 
-        var voicevoxRoot = ResolveVoicevoxOutputRoot();
-        Directory.CreateDirectory(voicevoxRoot);
-
-        var execDirName = DateTime.Now.ToString("yyyyMMdd_HHmmssfff");
-        var execDir = Path.Combine(voicevoxRoot, execDirName);
-        Directory.CreateDirectory(execDir);
-
-        var outputWavPath = Path.Combine(execDir, outputWavFileName);
+        var outputWavPath = Path.Combine(outputDir, outputWavFileName);
 
         await File.WriteAllBytesAsync(outputWavPath, wav, cancellationToken);
 
@@ -179,15 +215,6 @@ public sealed class VoicevoxSpeechService :
         }
 
         return dictDirs[0];
-    }
-
-    private string ResolveVoicevoxOutputRoot()
-    {
-        var root = !string.IsNullOrWhiteSpace(_options.OutputRootDirectory)
-            ? _options.OutputRootDirectory
-            : Path.GetTempPath();
-
-        return Path.Combine(root, _options.VoicevoxDirectoryName);
     }
 
     public void Dispose()

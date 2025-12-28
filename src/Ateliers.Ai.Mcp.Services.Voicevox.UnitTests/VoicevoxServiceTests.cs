@@ -4,9 +4,9 @@ using Xunit;
 
 namespace Ateliers.Ai.Mcp.Services.Voicevox.UnitTests;
 
-public sealed class VoicevoxSpeechServiceTests
+public sealed class VoicevoxServiceTests
 {
-    static VoicevoxSpeechServiceTests()
+    static VoicevoxServiceTests()
     {
         var path = @"C:\Program Files\VOICEVOX\vv-engine";
         if (Directory.Exists(path))
@@ -21,7 +21,7 @@ public sealed class VoicevoxSpeechServiceTests
 
     [Fact]
     [Trait("Category", "Integration")]
-    public async Task SynthesizeToFileAsync_WavFileIsGenerated()
+    public async Task GenerateVoiceFileAsync_WavFileIsGenerated()
     {
         // Arrange
         var options = new VoicevoxServiceOptions
@@ -31,14 +31,15 @@ public sealed class VoicevoxSpeechServiceTests
             VoicevoxDirectoryName = "voicevox"
         };
 
-        using var service = new VoicevoxSpeechService(options);
-
-        var wavFileName = $"test.wav";
+        using var service = new VoicevoxService(options);
+        var request = new GenerateVoiceRequest
+        {
+            Text = "これはテスト音声です。",
+            OutputWavFileName = "test_output.wav"
+        };
 
         // Act
-        var resultPath = await service.SynthesizeToFileAsync(
-            text: "これはテスト音声です。",
-            outputWavFileName: wavFileName);
+        var resultPath = await service.GenerateVoiceFileAsync(request);
 
         // Assert
         Assert.True(File.Exists(resultPath));
