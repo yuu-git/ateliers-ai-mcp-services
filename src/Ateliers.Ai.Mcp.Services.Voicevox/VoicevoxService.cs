@@ -163,6 +163,13 @@ public sealed class VoicevoxService :
         uint? styleId = null,
         CancellationToken cancellationToken = default)
     {
+        if (string.IsNullOrWhiteSpace(outputWavFileName))
+        {
+            throw new ArgumentException(
+                "OutputWavFileName must be specified",
+                nameof(outputWavFileName));
+        }
+
         var wav = await SynthesizeAsync(text, styleId, cancellationToken);
 
         var outputWavPath = Path.Combine(outputDir, outputWavFileName);

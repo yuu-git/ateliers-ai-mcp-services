@@ -22,13 +22,12 @@ public sealed class MarpService : IGenerateSlideService
 
     public string GenerateSlideMarkdown(string sourceMarkdown)
     {
-        var (frontmatter, bodyLines) = SplitFrontmatter(sourceMarkdown);
+        var (_, bodyLines) = SplitFrontmatter(sourceMarkdown);
 
-        bodyLines = NormalizeHorizontalRules(bodyLines);
-
-        var lines = sourceMarkdown
-            .Split('\n')
+        // 入力Markdown中の水平線はすべて無視する
+        var lines = bodyLines
             .Select(l => l.TrimEnd())
+            .Where(l => l.Trim() != "---")
             .ToList();
 
         var slides = new List<List<string>>();
@@ -36,7 +35,7 @@ public sealed class MarpService : IGenerateSlideService
 
         foreach (var line in lines)
         {
-            if (line.StartsWith("# "))
+            if (line.TrimStart().StartsWith("#"))
             {
                 currentSlide = new List<string>();
                 slides.Add(currentSlide);
@@ -46,9 +45,7 @@ public sealed class MarpService : IGenerateSlideService
             currentSlide.Add(line);
         }
 
-        var slideCount = slides.Count + 1;
-
-        if (slideCount < 2)
+        if (slides.Count < 2)
         {
             throw new InvalidOperationException(
                 "At least 2 slides are required for presentation.");
@@ -56,9 +53,10 @@ public sealed class MarpService : IGenerateSlideService
 
         var sb = new StringBuilder();
 
-        // Frontmatter
+        // Frontmatter（必ず1回だけ）
         sb.AppendLine("---");
         sb.AppendLine("marp: true");
+        sb.AppendLine("theme: default");
         sb.AppendLine("paginate: true");
         sb.AppendLine("---");
         sb.AppendLine();
@@ -80,6 +78,7 @@ public sealed class MarpService : IGenerateSlideService
 
         return sb.ToString();
     }
+
 
     public async Task<IReadOnlyList<string>> RenderToPngAsync(
         string slideMarkdown,
