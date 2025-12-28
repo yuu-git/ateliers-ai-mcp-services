@@ -31,6 +31,9 @@ dotnet add package Ateliers.Ai.Mcp.Services.Marp
 
 # FFmpeg support for media processing
 dotnet add package Ateliers.Ai.Mcp.Services.Ffmpeg
+
+# PresentationVideo Generator
+dotnet add package Ateliers.Ai.Mcp.Tools.PresentationVideo
 ```
 
 ## Features
@@ -43,6 +46,7 @@ dotnet add package Ateliers.Ai.Mcp.Services.Ffmpeg
 - **Voicevox** - Local voice synthesis using the VOICEVOX engine
 - **Marp** - Presentation generation using Marp CLI
 - **Ffmpeg** - Media processing using FFmpeg
+- **PresentationVideo** - Generate presentation videos from Marp slides and voice synthesis
 *(designed for MCP-based automation and content generation)*
 
 ## Voicevox Service Notes (Windows)
@@ -100,7 +104,7 @@ All packages depend on:
 - **Core** - Base interfaces and utilities
 - **Services** (this package) - Service layer implementations
 - **Tools** - MCP tool implementations
-- **Servers** - MCP server implementations
+- **processes** - MCP implementations
 
 ## Documentation
 

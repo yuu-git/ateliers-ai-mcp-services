@@ -12,6 +12,7 @@
     <Project Path="src/Ateliers.Ai.Mcp.Services.LocalFs/Ateliers.Ai.Mcp.Services.LocalFs.csproj" Id="08e94b54-5897-4f44-8861-098ddd38783b" />
     <Project Path="src/Ateliers.Ai.Mcp.Services.Marp/Ateliers.Ai.Mcp.Services.Marp.csproj" Id="9f2bfab9-6bcf-400f-9e69-34fe38029f31" />
     <Project Path="src/Ateliers.Ai.Mcp.Services.Notion/Ateliers.Ai.Mcp.Services.Notion.csproj" Id="de6a5a9a-8fbe-4e3e-bf9d-1ab639cc30c4" />
+    <Project Path="src/Ateliers.Ai.Mcp.Services.PresentationVideo/Ateliers.Ai.Mcp.Services.PresentationVideo.csproj" Id="f6e6b922-9b56-45ee-b408-40c764517bf6" />
     <Project Path="src/Ateliers.Ai.Mcp.Services.Voicevox/Ateliers.Ai.Mcp.Services.Voicevox.csproj" Id="63a8de6d-0c0f-46a4-9c02-186f3e1773b1" />
     <Project Path="src/Ateliers.Ai.Mcp.Services/Ateliers.Ai.Mcp.Services.csproj" />
   </Folder>
@@ -22,6 +23,7 @@
     <Project Path="src/Ateliers.Ai.Mcp.Services.LocalFs.UnitTests/Ateliers.Ai.Mcp.Services.LocalFs.UnitTests.csproj" Id="0f0f0275-9d1a-4cfc-a878-f0469849ac2c" />
     <Project Path="src/Ateliers.Ai.Mcp.Services.Marp.UnitTests/Ateliers.Ai.Mcp.Services.Marp.UnitTests.csproj" Id="d3d8aa7d-235a-49f0-b9bb-e9184414db4d" />
     <Project Path="src/Ateliers.Ai.Mcp.Services.Notion.UnitTests/Ateliers.Ai.Mcp.Services.Notion.UnitTests.csproj" Id="e9cc32a1-bd61-4e76-9b60-21bdb9ab6f51" />
+    <Project Path="src/Ateliers.Ai.Mcp.Services.PresentationVideo.UnitTests/Ateliers.Ai.Mcp.Services.PresentationVideo.UnitTests.csproj" Id="c8508597-cadf-4a4a-943d-ce9c59ba344b" />
     <Project Path="src/Ateliers.Ai.Mcp.Services.UnitTests/Ateliers.Ai.Mcp.Services.UnitTests.csproj" Id="eee5b1ff-f64b-4dd3-a7f2-5ada20aa934f" />
     <Project Path="src/Ateliers.Ai.Mcp.Services.Voicevox.UnitTests/Ateliers.Ai.Mcp.Services.Voicevox.UnitTests.csproj" Id="642058e0-43ca-4317-9a30-bc8832fc321b" />
   </Folder>
