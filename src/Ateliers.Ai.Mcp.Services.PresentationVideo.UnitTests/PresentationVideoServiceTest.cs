@@ -2,7 +2,6 @@
 using Ateliers.Ai.Mcp.Services.GenericModels;
 using Ateliers.Ai.Mcp.Services.Marp;
 using Ateliers.Ai.Mcp.Services.Voicevox;
-using NAudio.SoundFont;
 
 namespace Ateliers.Ai.Mcp.Services.PresentationVideo.UnitTests
 {
