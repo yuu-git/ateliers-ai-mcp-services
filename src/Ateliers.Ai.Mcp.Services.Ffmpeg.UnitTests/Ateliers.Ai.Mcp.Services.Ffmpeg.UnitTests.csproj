@@ -24,7 +24,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Ateliers.Ai.Mcp.Services.FFmpeg\Ateliers.Ai.Mcp.Services.Ffmpeg.csproj" />
+    <ProjectReference Include="..\Ateliers.Ai.Mcp.Services.Ffmpeg\Ateliers.Ai.Mcp.Services.Ffmpeg.csproj" />
   </ItemGroup>
 
   <ItemGroup>
