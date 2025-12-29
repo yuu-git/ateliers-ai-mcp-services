@@ -96,8 +96,8 @@ public sealed class MarpService : IGenerateSlideService
             FileName = _options.MarpExecutablePath,
             Arguments =
                 $"\"{inputPath}\" --images png --output \"{outputPrefix}\"",
-            RedirectStandardOutput = true,
-            RedirectStandardError = true,
+            RedirectStandardOutput = false,
+            RedirectStandardError = false,
             UseShellExecute = false,
             CreateNoWindow = true
         };
