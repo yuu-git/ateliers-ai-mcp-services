@@ -7,13 +7,13 @@
     <LangVersion>latest</LangVersion>
 
     <!-- NuGet パッケージ情報 -->
-    <Version>0.1.1</Version>
+    <Version>0.2.0</Version>
     <PackageId>Ateliers.Ai.Mcp.Services.PresentationVideo</PackageId>
     <Authors>ateliers</Authors>
     <Company>ateliers.dev</Company>
     <Product>Ateliers AI MCP</Product>
-    <Description>presentation video system service for Ateliers AI Model Context Protocol (MCP) implementation</Description>
-    <PackageTags>mcp;ai;presentation;video;</PackageTags>
+    <Description>Markdown からプレゼンテーション動画を生成する統合サービス</Description>
+    <PackageTags>mcp;ai;presentation;video;slide;voice;integration;markdown;automation;</PackageTags>
     <PackageProjectUrl>https://github.com/yuu-git/ateliers-ai-mcp-services</PackageProjectUrl>
     <RepositoryUrl>https://github.com/yuu-git/ateliers-ai-mcp-services</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
@@ -21,9 +21,9 @@
     <PackageReadmeFile>README.md</PackageReadmeFile>
 
     <!-- Assembly情報 -->
-    <AssemblyVersion>0.1.1.0</AssemblyVersion>
-    <FileVersion>0.1.1.0</FileVersion>
-    <InformationalVersion>0.1.1</InformationalVersion>
+    <AssemblyVersion>0.2.0.0</AssemblyVersion>
+    <FileVersion>0.2.0.0</FileVersion>
+    <InformationalVersion>0.2.0</InformationalVersion>
 
     <!-- NuGet パッケージ設定 -->
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
@@ -33,7 +33,7 @@
 
   <!-- README を NuGet パッケージに含める -->
   <ItemGroup>
-    <None Include="..\..\README.md" Pack="true" PackagePath="\" />
+    <None Include=".\README.md" Pack="true" PackagePath="\" />
   </ItemGroup>
 
   <ItemGroup>

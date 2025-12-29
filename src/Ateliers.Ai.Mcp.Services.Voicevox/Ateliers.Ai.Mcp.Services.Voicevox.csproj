@@ -7,13 +7,13 @@
     <LangVersion>latest</LangVersion>
 
     <!-- NuGet パッケージ情報 -->
-    <Version>0.1.1</Version>
+    <Version>0.2.0</Version>
     <PackageId>Ateliers.Ai.Mcp.Services.Voicevox</PackageId>
     <Authors>ateliers</Authors>
     <Company>ateliers.dev</Company>
     <Product>Ateliers AI MCP</Product>
-    <Description>voicevox system service for Ateliers AI Model Context Protocol (MCP) implementation</Description>
-    <PackageTags>mcp;ai;voicevox;local</PackageTags>
+    <Description>VOICEVOX エンジンを使用したローカル音声合成サービス</Description>
+    <PackageTags>mcp;ai;voicevox;tts;speech;voice;synthesis;audio;wav;local;</PackageTags>
     <PackageProjectUrl>https://github.com/yuu-git/ateliers-ai-mcp-services</PackageProjectUrl>
     <RepositoryUrl>https://github.com/yuu-git/ateliers-ai-mcp-services</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
@@ -21,9 +21,9 @@
     <PackageReadmeFile>README.md</PackageReadmeFile>
 
     <!-- Assembly情報 -->
-    <AssemblyVersion>0.1.1.0</AssemblyVersion>
-    <FileVersion>0.1.1.0</FileVersion>
-    <InformationalVersion>0.1.1</InformationalVersion>
+    <AssemblyVersion>0.2.0.0</AssemblyVersion>
+    <FileVersion>0.2.0.0</FileVersion>
+    <InformationalVersion>0.2.0</InformationalVersion>
 
     <!-- NuGet パッケージ設定 -->
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
@@ -33,7 +33,7 @@
 
   <!-- README を NuGet パッケージに含める -->
   <ItemGroup>
-    <None Include="..\..\README.md" Pack="true" PackagePath="\" />
+    <None Include=".\README.md" Pack="true" PackagePath="\" />
   </ItemGroup>
 
   <ItemGroup>

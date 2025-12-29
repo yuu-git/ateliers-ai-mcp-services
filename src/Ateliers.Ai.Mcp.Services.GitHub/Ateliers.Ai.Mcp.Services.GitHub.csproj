@@ -7,13 +7,13 @@
     <LangVersion>latest</LangVersion>
 
     <!-- NuGet パッケージ情報 -->
-    <Version>0.1.5</Version>
+    <Version>0.2.0</Version>
     <PackageId>Ateliers.Ai.Mcp.Services.GitHub</PackageId>
     <Authors>ateliers</Authors>
     <Company>ateliers.dev</Company>
     <Product>Ateliers AI MCP</Product>
-    <Description>GitHub API integration service for Ateliers AI Model Context Protocol (MCP) implementation</Description>
-    <PackageTags>mcp;ai;github;repository;file-management</PackageTags>
+    <Description>Octokit を使用した GitHub API 連携サービス</Description>
+    <PackageTags>mcp;ai;github;api;repository;file;octokit;cache;</PackageTags>
     <PackageProjectUrl>https://github.com/yuu-git/ateliers-ai-mcp-services</PackageProjectUrl>
     <RepositoryUrl>https://github.com/yuu-git/ateliers-ai-mcp-services</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
@@ -21,9 +21,9 @@
     <PackageReadmeFile>README.md</PackageReadmeFile>
 
     <!-- Assembly情報 -->
-    <AssemblyVersion>0.1.5.0</AssemblyVersion>
-    <FileVersion>0.1.5.0</FileVersion>
-    <InformationalVersion>0.1.5</InformationalVersion>
+    <AssemblyVersion>0.2.0.0</AssemblyVersion>
+    <FileVersion>0.2.0.0</FileVersion>
+    <InformationalVersion>0.2.0</InformationalVersion>
 
     <!-- NuGet パッケージ設定 -->
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
@@ -33,7 +33,7 @@
 
   <!-- README を NuGet パッケージに含める -->
   <ItemGroup>
-    <None Include="..\..\README.md" Pack="true" PackagePath="\" />
+    <None Include=".\README.md" Pack="true" PackagePath="\" />
   </ItemGroup>
 
   <ItemGroup>
