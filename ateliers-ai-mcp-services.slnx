@@ -4,6 +4,7 @@
     <File Path=".gitignore" />
     <File Path="LICENSE" />
     <File Path="README.md" />
+    <File Path="scripts/copy-to-local-nuget.ps1" />
   </Folder>
   <Folder Name="/src/">
     <Project Path="src/Ateliers.Ai.Mcp.Services.Ffmpeg/Ateliers.Ai.Mcp.Services.Ffmpeg.csproj" Id="57eee62a-7c3e-42b0-aaf2-7c8a5c68cb35" />

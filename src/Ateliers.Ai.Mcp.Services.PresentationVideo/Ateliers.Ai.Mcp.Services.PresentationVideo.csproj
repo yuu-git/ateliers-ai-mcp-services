@@ -26,7 +26,7 @@
     <InformationalVersion>0.1.1</InformationalVersion>
 
     <!-- NuGet パッケージ設定 -->
-    <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
+    <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
     <IncludeSymbols>true</IncludeSymbols>
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
   </PropertyGroup>
