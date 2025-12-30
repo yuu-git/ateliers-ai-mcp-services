@@ -3,7 +3,7 @@
 /// <summary>
 /// ローカルファイルシステム操作サービス
 /// </summary>
-public class LocalFileService : ILocalFileService
+public class LocalFileService : McpServiceBase, ILocalFileService
 {
     private readonly ILocalFileSystemSettings _localFileSystemSettings;
 
@@ -11,7 +11,8 @@ public class LocalFileService : ILocalFileService
     /// コンストラクタ
     /// </summary>
     /// <param name="localFileSystemSettings">ローカルファイルシステム設定</param>
-    public LocalFileService(ILocalFileSystemSettings localFileSystemSettings)
+    public LocalFileService(IMcpLogger mcpLogger, ILocalFileSystemSettings localFileSystemSettings)
+        : base(mcpLogger)
     {
         _localFileSystemSettings = localFileSystemSettings;
     }

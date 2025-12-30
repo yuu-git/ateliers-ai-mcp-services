@@ -4,11 +4,12 @@ using System.Text;
 
 namespace Ateliers.Ai.Mcp.Services.Ffmpeg;
 
-public sealed class FfmpegService : IMediaComposerService
+public sealed class FfmpegService : McpServiceBase, IMediaComposerService
 {
     private readonly IFfmpegServiceOptions _options;
 
-    public FfmpegService(IFfmpegServiceOptions options)
+    public FfmpegService(IMcpLogger mcpLogger, IFfmpegServiceOptions options)
+        : base(mcpLogger)
     {
         _options = options;
     }

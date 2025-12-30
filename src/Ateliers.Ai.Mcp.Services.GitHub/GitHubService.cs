@@ -7,7 +7,7 @@ namespace Ateliers.Ai.Mcp.Services.GitHub;
 /// <summary>
 /// GitHubリポジトリからのファイル取得サービス
 /// </summary>
-public class GitHubService : IGitHubService
+public class GitHubService : McpServiceBase, IGitHubService
 {
     private readonly IGitHubClient _client;
     private readonly IGitHubSettings _gitHubSettings;
@@ -26,7 +26,8 @@ public class GitHubService : IGitHubService
     /// Git操作サービスがある場合、ローカルのGit操作を優先する。
     /// </para>
     /// </remarks>
-    public GitHubService(IGitHubSettings gitHubSettings, IMemoryCache cache, IGitHubClient gitHubClient)
+    public GitHubService(IMcpLogger mcpLogger, IGitHubSettings gitHubSettings, IMemoryCache cache, IGitHubClient gitHubClient)
+        : base(mcpLogger)
     {
         _gitHubSettings = gitHubSettings;
         _cache = cache;

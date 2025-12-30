@@ -6,11 +6,12 @@ namespace Ateliers.Ai.Mcp.Services.Git;
 /// <summary>
 /// Gitサービス（LibGit2Sharp使用）
 /// </summary>
-public class GitService : IGitService
+public class GitService : McpServiceBase, IGitService
 {
     private readonly IGitSettings _gitSettings;
 
-    public GitService(IGitSettings gitSettings)
+    public GitService(IMcpLogger mcpLogger, IGitSettings gitSettings)
+        : base(mcpLogger)
     {
         _gitSettings = gitSettings;
     }

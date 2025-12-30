@@ -3,7 +3,7 @@ using NAudio.Wave;
 
 namespace Ateliers.Ai.Mcp.Services.PresentationVideo;
 
-public sealed class PresentationVideoService : IPresentationVideoGenerator
+public sealed class PresentationVideoService : McpServiceBase, IPresentationVideoGenerator
 {
     private readonly IPresentationVideoOptions _options;
     private readonly IGenerateVoiceService _voiceService;
@@ -11,10 +11,12 @@ public sealed class PresentationVideoService : IPresentationVideoGenerator
     private readonly IMediaComposerService _mediaComposerService;
 
     public PresentationVideoService(
+        IMcpLogger mcpLogger,
         IPresentationVideoOptions options,
         IGenerateVoiceService voiceService,
         IGenerateSlideService slideService,
         IMediaComposerService mediaComposerService)
+        : base(mcpLogger)
     {
         _options = options;
         _slideService = slideService;

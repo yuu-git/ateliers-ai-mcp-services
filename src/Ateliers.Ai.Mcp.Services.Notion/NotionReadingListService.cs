@@ -12,7 +12,7 @@ public class NotionReadingListService : NotionServiceBase, INotionReadingListSer
     /// コンストラクタ
     /// </summary>
     /// <param name="notionSettings"> Notion設定 </param>
-    public NotionReadingListService(INotionSettings notionSettings) : base(notionSettings)
+    public NotionReadingListService(IMcpLogger mcpLogger, INotionSettings notionSettings) : base(mcpLogger, notionSettings)
     {
     }
 

@@ -7,14 +7,14 @@ using VoicevoxCoreSharp.Core.Struct;
 
 namespace Ateliers.Ai.Mcp.Services.Voicevox;
 
-public sealed class VoicevoxService :
-    IGenerateVoiceService, IDisposable
+public sealed class VoicevoxService : McpServiceBase, IGenerateVoiceService, IDisposable
 {
     private readonly IVoicevoxServiceOptions _options;
     private readonly Synthesizer _synthesizer;
     private readonly SemaphoreSlim _gate = new(1, 1);
 
-    public VoicevoxService(IVoicevoxServiceOptions options)
+    public VoicevoxService(IMcpLogger mcpLogger, IVoicevoxServiceOptions options)
+        : base(mcpLogger)
     {
         _options = options ?? throw new ArgumentNullException(nameof(options));
 

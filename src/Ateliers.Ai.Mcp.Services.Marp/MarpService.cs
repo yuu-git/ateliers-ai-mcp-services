@@ -4,11 +4,12 @@ using System.Text;
 
 namespace Ateliers.Ai.Mcp.Services.Marp;
 
-public sealed class MarpService : IGenerateSlideService
+public sealed class MarpService : McpServiceBase, IGenerateSlideService
 {
     private readonly IMarpServiceOptions _options;
 
-    public MarpService(IMarpServiceOptions options)
+    public MarpService(IMcpLogger mcpLogger, IMarpServiceOptions options)
+        : base(mcpLogger)
     {
         _options = options ?? throw new ArgumentNullException(nameof(options));
     }

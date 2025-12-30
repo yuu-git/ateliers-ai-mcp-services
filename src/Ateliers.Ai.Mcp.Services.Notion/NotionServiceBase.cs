@@ -5,12 +5,13 @@ namespace Ateliers.Ai.Mcp.Services.Notion;
 /// <summary>
 /// Notion APIとの通信を担当するサービス
 /// </summary>
-public abstract class NotionServiceBase
+public abstract class NotionServiceBase : McpServiceBase
 {
     protected readonly INotionClient Client;
     protected readonly INotionSettings NotionSettings;
 
-    public NotionServiceBase(INotionSettings notionSettings)
+    public NotionServiceBase(IMcpLogger mcpLogger, INotionSettings notionSettings)
+        : base(mcpLogger)
     {
         NotionSettings = notionSettings;
 

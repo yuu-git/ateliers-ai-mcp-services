@@ -12,7 +12,7 @@ public class NotionIdeasService : NotionServiceBase, INotionIdeasService
     /// コンストラクタ
     /// </summary>
     /// <param name="notionSettings"> Notion設定 </param>
-    public NotionIdeasService(INotionSettings notionSettings) : base(notionSettings)
+    public NotionIdeasService(IMcpLogger mcpLogger, INotionSettings notionSettings) : base(mcpLogger, notionSettings)
     {
     }
 
