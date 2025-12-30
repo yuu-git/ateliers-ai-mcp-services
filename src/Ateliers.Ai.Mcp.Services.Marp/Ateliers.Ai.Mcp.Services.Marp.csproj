@@ -37,10 +37,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Ateliers.Ai.Mcp.Core" Version="0.1.1" />
-  </ItemGroup>
-
-  <ItemGroup>
     <ProjectReference Include="..\Ateliers.Ai.Mcp.Services\Ateliers.Ai.Mcp.Services.csproj" />
   </ItemGroup>
 
