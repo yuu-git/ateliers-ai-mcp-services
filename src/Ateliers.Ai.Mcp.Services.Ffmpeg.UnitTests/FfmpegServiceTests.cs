@@ -1,4 +1,5 @@
-﻿using Ateliers.Ai.Mcp.Services.GenericModels;
+﻿using Ateliers.Ai.Mcp.Logging;
+using Ateliers.Ai.Mcp.Services.GenericModels;
 using NAudio.Wave;
 
 namespace Ateliers.Ai.Mcp.Services.Ffmpeg.UnitTests;
@@ -9,7 +10,9 @@ public class FfmpegServiceTests
     [Trait("Category", "Integration")]
     public async Task ComposeAsync_TwoSlides_CreatesVideo()
     {
+        var logger = new InMemoryMcpLogger(new McpLoggerOptions());
         var service = new FfmpegService(
+            logger,
             new FfmpegServiceOptions
             {
                 FfmpegExecutablePath = "C:\\Program Files\\FFmpeg\\bin\\ffmpeg.exe"

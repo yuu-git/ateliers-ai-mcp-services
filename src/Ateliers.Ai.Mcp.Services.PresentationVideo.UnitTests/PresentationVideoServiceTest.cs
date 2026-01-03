@@ -1,4 +1,5 @@
-﻿using Ateliers.Ai.Mcp.Services.Ffmpeg;
+﻿using Ateliers.Ai.Mcp.Logging;
+using Ateliers.Ai.Mcp.Services.Ffmpeg;
 using Ateliers.Ai.Mcp.Services.GenericModels;
 using Ateliers.Ai.Mcp.Services.Marp;
 using Ateliers.Ai.Mcp.Services.Voicevox;
@@ -35,10 +36,13 @@ namespace Ateliers.Ai.Mcp.Services.PresentationVideo.UnitTests
                 MediaOutputDirectoryName = "media",
             };
 
-            var voicevoxService = new VoicevoxService(options);
-            var marpService = new MarpService(options);
-            var ffmpegService = new FfmpegService(options);
+            var loggger = new InMemoryMcpLogger(new McpLoggerOptions());
+
+            var voicevoxService = new VoicevoxService(loggger, options);
+            var marpService = new MarpService(loggger, options);
+            var ffmpegService = new FfmpegService(loggger, options);
             var presentationVideoService = new PresentationVideoService(
+                loggger,
                 options,
                 voicevoxService,
                 marpService,

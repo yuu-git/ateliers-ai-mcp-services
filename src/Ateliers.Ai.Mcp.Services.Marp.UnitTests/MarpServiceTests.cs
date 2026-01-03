@@ -1,4 +1,5 @@
-﻿using Ateliers.Ai.Mcp.Services.GenericModels;
+﻿using Ateliers.Ai.Mcp.Logging;
+using Ateliers.Ai.Mcp.Services.GenericModels;
 
 namespace Ateliers.Ai.Mcp.Services.Marp.UnitTests;
 
@@ -24,7 +25,8 @@ public class MarpServiceTests
             More content
             """;
 
-        var service = new MarpService(options);
+        var logger = new InMemoryMcpLogger(new McpLoggerOptions());
+        var service = new MarpService(logger, options);
         var result = service.GenerateSlideMarkdown(source);
 
         var separatorCount = result
@@ -54,7 +56,8 @@ public class MarpServiceTests
             Text
             """;
 
-        var service = new MarpService(options);
+        var logger = new InMemoryMcpLogger(new McpLoggerOptions());
+        var service = new MarpService(logger, options);
         var deck = service.GenerateSlideMarkdown(source);
 
         Assert.DoesNotContain("\n---\n---\n", deck); 
@@ -68,7 +71,9 @@ public class MarpServiceTests
         {
             MarpExecutablePath = "C:\\Program Files\\Marp-CLI\\marp.exe"
         };
-        var service = new MarpService(options);
+
+        var logger = new InMemoryMcpLogger(new McpLoggerOptions());
+        var service = new MarpService(logger, options);
         var sourceMarkdown =
             """
             # Title

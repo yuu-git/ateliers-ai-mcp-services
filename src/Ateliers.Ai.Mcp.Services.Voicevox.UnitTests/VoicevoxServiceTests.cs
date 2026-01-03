@@ -1,4 +1,5 @@
-﻿using Ateliers.Ai.Mcp.Services.GenericModels;
+﻿using Ateliers.Ai.Mcp.Logging;
+using Ateliers.Ai.Mcp.Services.GenericModels;
 using Ateliers.Ai.Mcp.Services.Voicevox;
 using Xunit;
 
@@ -30,8 +31,9 @@ public sealed class VoicevoxServiceTests
             VoiceModelNames = new[] { "0.vmm" },
             VoicevoxOutputDirectoryName = "voicevox"
         };
+        var loggger = new InMemoryMcpLogger(new McpLoggerOptions());
 
-        using var service = new VoicevoxService(options);
+        using var service = new VoicevoxService(loggger, options);
         var request = new GenerateVoiceRequest
         {
             Text = "これはテスト音声です。",
