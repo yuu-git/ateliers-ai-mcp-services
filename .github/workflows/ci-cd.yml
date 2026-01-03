@@ -3,26 +3,44 @@ name: CI/CD Pipeline
 on:
   push:
     branches: [ master ]
-    tags: [ '**' ]
+    tags: [ 'v*' ]
   pull_request:
     branches: [ master ]
 
 env:
   DOTNET_VERSION: '10.0.x'
   CONFIGURATION: 'Release'
+  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: '1'
+  DOTNET_CLI_TELEMETRY_OPTOUT: '1'
 
 jobs:
   # ビルド & テスト
   build-and-test:
     runs-on: ubuntu-latest
+    
+    permissions:
+      contents: read
+      checks: write  # test-reporter 用
+      pull-requests: write  # PR へのコメント用
+    
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # GitVersion などで使用する場合
 
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Cache NuGet packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj') }}
+          restore-keys: |
+            ${{ runner.os }}-nuget-
 
       - name: Restore dependencies
         run: dotnet restore
@@ -31,20 +49,43 @@ jobs:
         run: dotnet build --configuration ${{ env.CONFIGURATION }} --no-restore
 
       - name: Test
-        run: dotnet test --configuration ${{ env.CONFIGURATION }} --no-build --verbosity normal --collect:"XPlat Code Coverage" --filter "Category!=Integration"
+        run: dotnet test --configuration ${{ env.CONFIGURATION }} --no-build --verbosity normal --collect:"XPlat Code Coverage" --logger "trx;LogFileName=test-results.trx" --filter "Category!=Integration"
 
       - name: Upload test results
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: test-results
-          path: '**/TestResults/**'
+          path: |
+            **/TestResults/**/*.trx
+            **/TestResults/**/*.xml
+
+      - name: Publish test results
+        if: always()
+        uses: dorny/test-reporter@v1
+        with:
+          name: Test Results
+          path: '**/TestResults/**/test-results.trx'
+          reporter: dotnet-trx
+          fail-on-error: true
+
+      - name: Upload coverage to Codecov (optional)
+        if: success()
+        uses: codecov/codecov-action@v4
+        with:
+          files: '**/TestResults/**/coverage.cobertura.xml'
+          fail_ci_if_error: false
 
   # NuGet パッケージ公開（Tagプッシュ時のみ）
   publish-nuget:
     needs: build-and-test
-    if: startsWith(github.ref, 'refs/tags/')
+    if: startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
+    
+    permissions:
+      contents: write  # GitHub Releases 用
+      packages: write  # GitHub Packages 用（オプション）
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -72,5 +113,15 @@ jobs:
           dotnet pack src/Ateliers.Ai.Mcp.Services.Ffmpeg/Ateliers.Ai.Mcp.Services.Ffmpeg.csproj --configuration ${{ env.CONFIGURATION }} --no-build --output ./packages
           dotnet pack src/Ateliers.Ai.Mcp.Services.PresentationVideo/Ateliers.Ai.Mcp.Services.PresentationVideo.csproj --configuration ${{ env.CONFIGURATION }} --no-build --output ./packages
 
-      - name: Publish to nuget.org
+      - name: Publish to NuGet.org
         run: dotnet nuget push ./packages/*.nupkg --source https://api.nuget.org/v3/index.json --api-key ${{ secrets.NUGET_API_KEY }} --skip-duplicate
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: ./packages/*.*nupkg
+          generate_release_notes: true
+          draft: false
+          prerelease: ${{ contains(github.ref_name, '-') }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
