@@ -119,3 +119,5 @@ notes/
 # voicevox native resources
 voicevox_core/
 **/voicevox_core/
+# Project Knowledge (if using copy script)
+.project-knowledge/

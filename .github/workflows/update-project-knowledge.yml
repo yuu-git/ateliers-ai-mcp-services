@@ -1,0 +1,117 @@
+name: Update Project Knowledge
+
+on:
+  # 毎日 9:00 (JST) に自動実行（活発な開発期間中）
+  schedule:
+    - cron: '0 0 * * *'  # UTC 0:00 = JST 9:00 (毎日)
+  
+  # 手動実行を許可
+  workflow_dispatch:
+
+jobs:
+  update-submodule:
+    runs-on: ubuntu-latest
+    
+    permissions:
+      contents: write
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          submodules: true
+      
+      - name: Get current submodule commit
+        id: current_commit
+        run: |
+          cd .submodules/ateliers-ai-mcp-projectbase
+          CURRENT_SHA=$(git rev-parse HEAD)
+          CURRENT_SHORT_SHA=$(git rev-parse --short HEAD)
+          echo "sha=$CURRENT_SHA" >> $GITHUB_OUTPUT
+          echo "short_sha=$CURRENT_SHORT_SHA" >> $GITHUB_OUTPUT
+          cd ../..
+      
+      - name: Update submodule to latest
+        run: |
+          git submodule update --remote --merge .submodules/ateliers-ai-mcp-projectbase
+      
+      - name: Get updated submodule commit
+        id: updated_commit
+        run: |
+          cd .submodules/ateliers-ai-mcp-projectbase
+          UPDATED_SHA=$(git rev-parse HEAD)
+          UPDATED_SHORT_SHA=$(git rev-parse --short HEAD)
+          echo "sha=$UPDATED_SHA" >> $GITHUB_OUTPUT
+          echo "short_sha=$UPDATED_SHORT_SHA" >> $GITHUB_OUTPUT
+          cd ../..
+      
+      - name: Check for changes
+        id: check_changes
+        run: |
+          if [ "${{ steps.current_commit.outputs.sha }}" == "${{ steps.updated_commit.outputs.sha }}" ]; then
+            echo "has_changes=false" >> $GITHUB_OUTPUT
+            echo "No changes detected"
+          else
+            echo "has_changes=true" >> $GITHUB_OUTPUT
+            echo "Changes detected"
+          fi
+      
+      - name: Get change log
+        if: steps.check_changes.outputs.has_changes == 'true'
+        id: changelog
+        run: |
+          cd .submodules/ateliers-ai-mcp-projectbase
+          CHANGELOG=$(git log --oneline ${{ steps.current_commit.outputs.sha }}..${{ steps.updated_commit.outputs.sha }})
+          echo "log<<EOF" >> $GITHUB_OUTPUT
+          echo "$CHANGELOG" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+          
+          COMMIT_COUNT=$(git rev-list --count ${{ steps.current_commit.outputs.sha }}..${{ steps.updated_commit.outputs.sha }})
+          echo "count=$COMMIT_COUNT" >> $GITHUB_OUTPUT
+          cd ../..
+      
+      - name: Commit and push if changed
+        if: steps.check_changes.outputs.has_changes == 'true'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add .submodules/ateliers-ai-mcp-projectbase
+          git commit -m "chore: update project knowledge submodule" \
+                     -m "Updated from ${{ steps.current_commit.outputs.short_sha }} to ${{ steps.updated_commit.outputs.short_sha }} (${{ steps.changelog.outputs.count }} commits)"
+          git push
+      
+      - name: Create summary
+        run: |
+          if [ "${{ steps.check_changes.outputs.has_changes }}" == "true" ]; then
+            echo "## ✅ Project Knowledge サブモジュールを更新しました" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "### 📊 更新情報" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "- **更新前**: \`${{ steps.current_commit.outputs.short_sha }}\`" >> $GITHUB_STEP_SUMMARY
+            echo "- **更新後**: \`${{ steps.updated_commit.outputs.short_sha }}\`" >> $GITHUB_STEP_SUMMARY
+            echo "- **コミット数**: ${{ steps.changelog.outputs.count }} commits" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "### 📝 変更履歴" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+            echo "${{ steps.changelog.outputs.log }}" >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "### 🔍 詳細確認" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo '```bash' >> $GITHUB_STEP_SUMMARY
+            echo "# サブモジュールディレクトリに移動" >> $GITHUB_STEP_SUMMARY
+            echo "cd .submodules/ateliers-ai-mcp-projectbase" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "# 変更履歴を確認" >> $GITHUB_STEP_SUMMARY
+            echo "git log --oneline -10" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "# 特定のコミットの詳細を確認" >> $GITHUB_STEP_SUMMARY
+            echo "git show <commit-hash>" >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+          else
+            echo "## ℹ️ Project Knowledge は既に最新版です" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "現在のコミット: \`${{ steps.current_commit.outputs.short_sha }}\`" >> $GITHUB_STEP_SUMMARY
+          fi
