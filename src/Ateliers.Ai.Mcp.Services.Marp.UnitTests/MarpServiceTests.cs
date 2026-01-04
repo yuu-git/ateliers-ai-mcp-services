@@ -39,6 +39,101 @@ public class MarpServiceTests
     }
 
     [Fact]
+    public void GenerateSlideMarkdown_DefaultHeadingPrefixesAreTreatedAsSlideSeparators()
+    {
+        var options = new MarpServiceOptions
+        {
+            MarpExecutablePath = "C:\\Program Files\\Marp-CLI\\marp.exe",
+        };
+        var source =
+            """
+            # Title
+            Intro
+
+            ## Heading2
+            Text
+
+            ### Heading3
+            More text
+            """;
+        var logger = new InMemoryMcpLogger(new McpLoggerOptions());
+        var service = new MarpService(logger, options);
+        var deck = service.GenerateSlideMarkdown(source);
+        var separatorCount = deck
+            .Split('\n')
+            .Count(line => line.Trim() == "---");
+        // frontmatter(2行) + slide separators(2) = 4
+        // slides = separatorCount - 2
+        Assert.Equal(1, separatorCount - 2);
+    }
+
+    [Fact]
+    public void GenerateSlideMarkdown_CustomHeadingPrefixesAreTreatedAsSlideSeparators()
+    {
+        var options = new MarpServiceOptions
+        {
+            MarpExecutablePath = "C:\\Program Files\\Marp-CLI\\marp.exe",
+            SeparatorHeadingPrefixList = new List<string> { "#", "##", "###" }
+        };
+        var source =
+            """
+            # Title
+            Intro
+
+            ## Heading2
+            Text
+
+            ### Heading3
+            More text 1
+            
+            #### Heading4
+            More text 2
+
+            ##### Heading5
+            More text 3
+            """;
+        var logger = new InMemoryMcpLogger(new McpLoggerOptions());
+        var service = new MarpService(logger, options);
+        var deck = service.GenerateSlideMarkdown(source);
+        var separatorCount = deck
+            .Split('\n')
+            .Count(line => line.Trim() == "---");
+        // frontmatter(2行) + slide separators(4) = 6
+        // slides = separatorCount - 2
+        Assert.Equal(2, separatorCount - 2);
+    }
+
+    [Fact]
+    public void GenerateSlideMarkdown_HeadingPrefixesAreTreatedAsSlideSeparators()
+    {
+        var options = new MarpServiceOptions
+        {
+            MarpExecutablePath = "C:\\Program Files\\Marp-CLI\\marp.exe",
+            SeparatorHeadingPrefixList = new List<string> { "##", "###" }
+        };
+        var source =
+            """
+            # Title
+            Intro
+
+            ## Heading2
+            Text
+
+            ### Heading3
+            More text
+            """;
+        var logger = new InMemoryMcpLogger(new McpLoggerOptions());
+        var service = new MarpService(logger, options);
+        var deck = service.GenerateSlideMarkdown(source);
+        var separatorCount = deck
+            .Split('\n')
+            .Count(line => line.Trim() == "---");
+        // frontmatter(2行) + slide separators(2) = 3
+        // slides = separatorCount - 1
+        Assert.Equal(2, separatorCount - 1);
+    }
+
+    [Fact]
     public void GenerateSlideMarkdown_HorizontalRuleBeforeHeadingIsTreatedAsSlideSeparator()
     {
         var options = new MarpServiceOptions

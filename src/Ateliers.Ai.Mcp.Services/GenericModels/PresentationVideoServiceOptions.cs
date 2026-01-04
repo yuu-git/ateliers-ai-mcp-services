@@ -1,5 +1,11 @@
 ﻿namespace Ateliers.Ai.Mcp.Services.GenericModels;
 
+/// <summary>
+/// プレゼンテーション動画生成サービスの汎用オプション設定
+/// </summary>
+/// <remarks>
+/// 汎用設定の組み合わせ： Marp + Voicevox + Ffmpeg
+/// </remarks>
 public class PresentationVideoServiceOptions : OutputDirectoryProvider, IPresentationVideoOptions, IVoicevoxServiceOptions, IMarpServiceOptions, IFfmpegServiceOptions
 {
     // IVoicevoxServiceOptions
@@ -15,6 +21,8 @@ public class PresentationVideoServiceOptions : OutputDirectoryProvider, IPresent
     public string MarpExecutablePath { get; init; } = "marp";
 
     public string MarpOutputDirectoryName { get; init; } = "slide";
+
+    public IReadOnlyList<string> SeparatorHeadingPrefixList { get; init; } = new List<string> { "# ", "## " };
 
     // IFfmpegServiceOptions
     public string FfmpegExecutablePath { get; init; } = "ffmpeg";

@@ -29,12 +29,14 @@ public sealed class MarpService : McpServiceBase, IGenerateSlideService
 
         foreach (var line in lines)
         {
-            if (line.TrimStart().StartsWith("#"))
+            // スライド区切り見出しであれば新しいスライドを開始
+            if (_options.SeparatorHeadingPrefixList.Select(head => line.TrimStart().StartsWith(head + " ")).Any(isMatch => isMatch))
             {
                 currentSlide = new List<string>();
                 slides.Add(currentSlide);
             }
 
+            // 現在のスライドがなければ新しいスライドを開始
             currentSlide ??= new List<string>();
             currentSlide.Add(line);
         }
