@@ -26,9 +26,10 @@ public class GitService : McpServiceBase, IGitService
     /// </summary>
     public IEnumerable<string> GetRepositoryKeys()
     {
-        McpLogger?.Info($"{LogPrefix} リポジトリキーの一覧取得");
-
-        return _gitSettings.GitRepositories.Keys;
+        McpLogger?.Debug($"{LogPrefix} GetRepositoryKeys 開始");
+        var keys = _gitSettings.GitRepositories.Keys;
+        McpLogger?.Debug($"{LogPrefix} GetRepositoryKeys 完了: {keys.Count()}件");
+        return keys;
     }
 
     /// <summary>
@@ -38,9 +39,10 @@ public class GitService : McpServiceBase, IGitService
     /// <returns>存在する場合はtrue、それ以外はfalse</returns>
     public bool RepositoryExists(string repositoryKey)
     {
-        McpLogger?.Info($"{LogPrefix} リポジトリの存在確認 {repositoryKey}");
-
-        return _gitSettings.GitRepositories.ContainsKey(repositoryKey);
+        McpLogger?.Debug($"{LogPrefix} RepositoryExists 開始: repositoryKey={repositoryKey}");
+        var exists = _gitSettings.GitRepositories.ContainsKey(repositoryKey);
+        McpLogger?.Debug($"{LogPrefix} RepositoryExists 完了: repositoryKey={repositoryKey}, exists={exists}");
+        return exists;
     }
 
     /// <summary>
@@ -50,7 +52,7 @@ public class GitService : McpServiceBase, IGitService
     /// <returns> リポジトリ情報、存在しない場合はnull </returns>
     public IGitRepositorySummary? GetRepositorySummary(string repositoryKey)
     {
-        McpLogger?.Info($"{LogPrefix} リポジトリサマリ取得開始 {repositoryKey}");
+        McpLogger?.Info($"{LogPrefix} GetRepositorySummary 開始: repositoryKey={repositoryKey}");
 
         if (string.IsNullOrEmpty(repositoryKey))
         {
@@ -60,7 +62,10 @@ public class GitService : McpServiceBase, IGitService
         }
 
         if (!_gitSettings.GitRepositories.TryGetValue(repositoryKey, out var config))
+        {
+            McpLogger?.Warn($"{LogPrefix} GetRepositorySummary: リポジトリが見つかりません: repositoryKey={repositoryKey}");
             return null;
+        }
 
         var repositoryInfo = _gitSettings.GitRepositories.FirstOrDefault(repo => repo.Key == repositoryKey).Value;
         if (repositoryInfo == null)
@@ -78,6 +83,7 @@ public class GitService : McpServiceBase, IGitService
             throw ex;
         }
 
+        McpLogger?.Debug($"{LogPrefix} GetRepositorySummary: リポジトリを開きます: localPath={repositoryInfo.LocalPath}");
         using var repo = new Repository(repositoryInfo.LocalPath);
 
         if (repo == null)
@@ -97,7 +103,7 @@ public class GitService : McpServiceBase, IGitService
             HasLocalPath = !string.IsNullOrEmpty(repositoryInfo.LocalPath)
         };
 
-        McpLogger?.Info($"{LogPrefix} リポジトリサマリ取得完了");
+        McpLogger?.Info($"{LogPrefix} GetRepositorySummary 完了: name={repositorySummary.Name}, branch={repositorySummary.Branch}");
 
         return repositorySummary;
     }
@@ -112,7 +118,7 @@ public class GitService : McpServiceBase, IGitService
     /// <returns> リポジトリ情報 </returns>
     public GitRepositoryInfoDto GetRepositoryInfo(string repositoryKey, bool remoteUrlMasked = true)
     {
-        McpLogger?.Info($"{LogPrefix} リポジトリ情報取得開始 {repositoryKey}");
+        McpLogger?.Info($"{LogPrefix} GetRepositoryInfo 開始: repositoryKey={repositoryKey}, remoteUrlMasked={remoteUrlMasked}");
 
         if (string.IsNullOrEmpty(repositoryKey))
         {
@@ -137,6 +143,7 @@ public class GitService : McpServiceBase, IGitService
             throw ex;
         }
 
+        McpLogger?.Debug($"{LogPrefix} GetRepositoryInfo: リポジトリを開きます: localPath={repositoryInfo.LocalPath}");
         using var repo = new Repository(repositoryInfo.LocalPath);
 
         if (repo == null)
@@ -147,6 +154,7 @@ public class GitService : McpServiceBase, IGitService
             throw ex;
         }
         
+        McpLogger?.Debug($"{LogPrefix} GetRepositoryInfo: ステータス取得中...");
         var status = repo.RetrieveStatus();
 
         var repositoryDto = new GitRepositoryInfoDto
@@ -193,7 +201,7 @@ public class GitService : McpServiceBase, IGitService
             Tags = repo.Tags.Select(t => t.FriendlyName).ToList()
         };
 
-        McpLogger?.Info($"{LogPrefix} リポジトリ情報取得完了");
+        McpLogger?.Info($"{LogPrefix} GetRepositoryInfo 完了: repo={repositoryDto.RepositoryName}, branch={repositoryDto.CurrentBranch}, isClean={repositoryDto.IsClean}, branches={repositoryDto.Branches.Count}, commits={repositoryDto.RecentCommits.Count}");
 
         return repositoryDto;
     }
@@ -203,18 +211,18 @@ public class GitService : McpServiceBase, IGitService
     /// </summary>
     public async Task<GitPullResult> PullAsync(string repositoryKey, string repoPath)
     {
-        McpLogger?.Info($"{LogPrefix} Pull実行開始 {repositoryKey}");
+        McpLogger?.Info($"{LogPrefix} PullAsync 開始: repositoryKey={repositoryKey}, repoPath={repoPath}");
 
         return await Task.Run(() =>
         {
             try
             {
                 // Tokenチェック
-                McpLogger?.Debug($"{LogPrefix} Tokenチェック開始");
+                McpLogger?.Debug($"{LogPrefix} PullAsync: Tokenチェック開始");
                 var token = _gitSettings.ResolveToken(repositoryKey);
                 if (token == null)
                 {
-                    McpLogger?.Warn($"{LogPrefix} Gitトークンが設定されていません");
+                    McpLogger?.Warn($"{LogPrefix} PullAsync: Gitトークンが設定されていません - Pullをスキップします");
                     return new GitPullResult
                     {
                         Success = false,
@@ -223,11 +231,11 @@ public class GitService : McpServiceBase, IGitService
                 }
 
                 // Git Identityチェック
-                McpLogger?.Debug($"{LogPrefix} Git Identityチェック開始");
+                McpLogger?.Debug($"{LogPrefix} PullAsync: Git Identityチェック開始");
                 var (email, username) = _gitSettings.ResolveGitIdentity(repositoryKey);
                 if (string.IsNullOrEmpty(email) || string.IsNullOrEmpty(username))
                 {
-                    McpLogger?.Warn($"{LogPrefix} GitメールアドレスまたはユーザーIDが設定されていません");
+                    McpLogger?.Warn($"{LogPrefix} PullAsync: GitメールアドレスまたはユーザーIDが設定されていません");
                     return new GitPullResult
                     {
                         Success = false,
@@ -236,23 +244,24 @@ public class GitService : McpServiceBase, IGitService
                 }
 
                 // リポジトリチェック
-                McpLogger?.Debug($"{LogPrefix} リポジトリ有効性チェック: {repoPath}");
+                McpLogger?.Debug($"{LogPrefix} PullAsync: リポジトリ有効性チェック: {repoPath}");
                 if (!Repository.IsValid(repoPath))
                 {
-                    McpLogger?.Error($"{LogPrefix} 有効なGitリポジトリではありません: {repoPath}");
+                    var ex = new InvalidOperationException($"有効なGitリポジトリではありません: {repoPath}");
+                    McpLogger?.Error($"{LogPrefix} PullAsync: {ex.Message}", ex);
                     return new GitPullResult
                     {
                         Success = false,
-                        Message = $"有効なGitリポジトリではありません: {repoPath}"
+                        Message = ex.Message
                     };
                 }
 
                 using var repo = new Repository(repoPath);
                 var remoteUrl = repo.Network.Remotes["origin"]?.Url;
-                McpLogger?.Debug($"{LogPrefix} リモートURL取得完了");
+                McpLogger?.Debug($"{LogPrefix} PullAsync: リモートURL取得完了: {MaskRemoteUrl(remoteUrl ?? string.Empty)}");
 
                 // Pull実行
-                McpLogger?.Info($"{LogPrefix} Pull実行中...");
+                McpLogger?.Info($"{LogPrefix} PullAsync: Pull実行中...");
                 var signature = new Signature(username, email, DateTimeOffset.Now);
                 var options = new PullOptions
                 {
@@ -264,12 +273,12 @@ public class GitService : McpServiceBase, IGitService
                 };
 
                 var result = Commands.Pull(repo, signature, options);
-                McpLogger?.Info($"{LogPrefix} Pullコマンド実行完了: {result.Status}");
+                McpLogger?.Info($"{LogPrefix} PullAsync: Pullコマンド実行完了: status={result.Status}");
 
                 // マージステータス確認
                 if (result.Status == MergeStatus.Conflicts)
                 {
-                    McpLogger?.Warn($"{LogPrefix} マージコンフリクトが検出されました");
+                    McpLogger?.Warn($"{LogPrefix} PullAsync: マージコンフリクトが検出されました");
                     return new GitPullResult
                     {
                         Success = false,
@@ -282,7 +291,7 @@ public class GitService : McpServiceBase, IGitService
                     };
                 }
 
-                McpLogger?.Info($"{LogPrefix} Pull完了");
+                McpLogger?.Info($"{LogPrefix} PullAsync 完了: status={result.Status}");
                 return new GitPullResult
                 {
                     Success = true,
@@ -291,7 +300,7 @@ public class GitService : McpServiceBase, IGitService
             }
             catch (Exception ex)
             {
-                McpLogger?.Error($"{LogPrefix} Pull失敗: {ex.Message}", ex);
+                McpLogger?.Error($"{LogPrefix} PullAsync: Pull失敗: {ex.Message}", ex);
                 return new GitPullResult
                 {
                     Success = false,
@@ -310,14 +319,18 @@ public class GitService : McpServiceBase, IGitService
         string filePath,
         string? customMessage = null)
     {
+        McpLogger?.Info($"{LogPrefix} CommitAsync 開始: repositoryKey={repositoryKey}, repoPath={repoPath}, filePath={filePath}");
+
         return await Task.Run(() =>
         {
             try
             {
                 // Git Identityチェック
+                McpLogger?.Debug($"{LogPrefix} CommitAsync: Git Identityチェック開始");
                 var (email, username) = _gitSettings.ResolveGitIdentity(repositoryKey);
                 if (string.IsNullOrEmpty(email) || string.IsNullOrEmpty(username))
                 {
+                    McpLogger?.Warn($"{LogPrefix} CommitAsync: Git email or username not configured");
                     return new GitCommitResult
                     {
                         Success = false,
@@ -326,27 +339,34 @@ public class GitService : McpServiceBase, IGitService
                 }
 
                 // リポジトリチェック
+                McpLogger?.Debug($"{LogPrefix} CommitAsync: リポジトリ有効性チェック: {repoPath}");
                 if (!Repository.IsValid(repoPath))
                 {
+                    var ex = new InvalidOperationException($"Not a valid git repository: {repoPath}");
+                    McpLogger?.Error($"{LogPrefix} CommitAsync: {ex.Message}", ex);
                     return new GitCommitResult
                     {
                         Success = false,
-                        Message = $"Not a valid git repository: {repoPath}"
+                        Message = ex.Message
                     };
                 }
 
                 using var repo = new Repository(repoPath);
 
                 // ファイルをステージング
+                McpLogger?.Debug($"{LogPrefix} CommitAsync: ファイルをステージング: {filePath}");
                 Commands.Stage(repo, filePath);
 
                 // コミットメッセージ生成
                 var message = customMessage ?? $"Update {filePath} via MCP";
+                McpLogger?.Debug($"{LogPrefix} CommitAsync: コミットメッセージ: {message}");
 
                 // コミット実行
+                McpLogger?.Info($"{LogPrefix} CommitAsync: コミット実行中...");
                 var signature = new Signature(username, email, DateTimeOffset.Now);
                 var commit = repo.Commit(message, signature, signature);
 
+                McpLogger?.Info($"{LogPrefix} CommitAsync 完了: commitHash={commit.Sha}, message={commit.MessageShort}");
                 return new GitCommitResult
                 {
                     Success = true,
@@ -356,6 +376,7 @@ public class GitService : McpServiceBase, IGitService
             }
             catch (Exception ex)
             {
+                McpLogger?.Error($"{LogPrefix} CommitAsync: Commit failed: {ex.Message}", ex);
                 return new GitCommitResult
                 {
                     Success = false,
@@ -373,14 +394,18 @@ public class GitService : McpServiceBase, IGitService
         string repoPath,
         string? customMessage = null)
     {
+        McpLogger?.Info($"{LogPrefix} CommitAllAsync 開始: repositoryKey={repositoryKey}, repoPath={repoPath}");
+
         return await Task.Run(() =>
         {
             try
             {
                 // Git Identityチェック
+                McpLogger?.Debug($"{LogPrefix} CommitAllAsync: Git Identityチェック開始");
                 var (email, username) = _gitSettings.ResolveGitIdentity(repositoryKey);
                 if (string.IsNullOrEmpty(email) || string.IsNullOrEmpty(username))
                 {
+                    McpLogger?.Warn($"{LogPrefix} CommitAllAsync: Git email or username not configured");
                     return new GitCommitResult
                     {
                         Success = false,
@@ -389,21 +414,26 @@ public class GitService : McpServiceBase, IGitService
                 }
 
                 // リポジトリチェック
+                McpLogger?.Debug($"{LogPrefix} CommitAllAsync: リポジトリ有効性チェック: {repoPath}");
                 if (!Repository.IsValid(repoPath))
                 {
+                    var ex = new InvalidOperationException($"Not a valid git repository: {repoPath}");
+                    McpLogger?.Error($"{LogPrefix} CommitAllAsync: {ex.Message}", ex);
                     return new GitCommitResult
                     {
                         Success = false,
-                        Message = $"Not a valid git repository: {repoPath}"
+                        Message = ex.Message
                     };
                 }
 
                 using var repo = new Repository(repoPath);
 
                 // 変更があるかチェック
+                McpLogger?.Debug($"{LogPrefix} CommitAllAsync: ステータス確認中...");
                 var status = repo.RetrieveStatus();
                 if (!status.IsDirty)
                 {
+                    McpLogger?.Info($"{LogPrefix} CommitAllAsync: 変更がありません");
                     return new GitCommitResult
                     {
                         Success = true,
@@ -413,15 +443,19 @@ public class GitService : McpServiceBase, IGitService
                 }
 
                 // 全変更をステージング
+                McpLogger?.Debug($"{LogPrefix} CommitAllAsync: 全変更をステージング中...");
                 Commands.Stage(repo, "*");
 
                 // コミットメッセージ生成
                 var message = customMessage ?? "Update files via MCP";
+                McpLogger?.Debug($"{LogPrefix} CommitAllAsync: コミットメッセージ: {message}");
 
                 // コミット実行
+                McpLogger?.Info($"{LogPrefix} CommitAllAsync: コミット実行中...");
                 var signature = new Signature(username, email, DateTimeOffset.Now);
                 var commit = repo.Commit(message, signature, signature);
 
+                McpLogger?.Info($"{LogPrefix} CommitAllAsync 完了: commitHash={commit.Sha}, message={commit.MessageShort}");
                 return new GitCommitResult
                 {
                     Success = true,
@@ -431,6 +465,7 @@ public class GitService : McpServiceBase, IGitService
             }
             catch (Exception ex)
             {
+                McpLogger?.Error($"{LogPrefix} CommitAllAsync: Commit failed: {ex.Message}", ex);
                 return new GitCommitResult
                 {
                     Success = false,
@@ -445,14 +480,18 @@ public class GitService : McpServiceBase, IGitService
     /// </summary>
     public async Task<GitPushResult> PushAsync(string repositoryKey, string repoPath)
     {
+        McpLogger?.Info($"{LogPrefix} PushAsync 開始: repositoryKey={repositoryKey}, repoPath={repoPath}");
+
         return await Task.Run(() =>
         {
             try
             {
                 // Tokenチェック
+                McpLogger?.Debug($"{LogPrefix} PushAsync: Tokenチェック開始");
                 var token = _gitSettings.ResolveToken(repositoryKey);
                 if (token == null)
                 {
+                    McpLogger?.Warn($"{LogPrefix} PushAsync: Git token not configured - skipping push");
                     return new GitPushResult
                     {
                         Success = false,
@@ -461,12 +500,15 @@ public class GitService : McpServiceBase, IGitService
                 }
 
                 // リポジトリチェック
+                McpLogger?.Debug($"{LogPrefix} PushAsync: リポジトリ有効性チェック: {repoPath}");
                 if (!Repository.IsValid(repoPath))
                 {
+                    var ex = new InvalidOperationException($"Not a valid git repository: {repoPath}");
+                    McpLogger?.Error($"{LogPrefix} PushAsync: {ex.Message}", ex);
                     return new GitPushResult
                     {
                         Success = false,
-                        Message = $"Not a valid git repository: {repoPath}"
+                        Message = ex.Message
                     };
                 }
 
@@ -476,19 +518,24 @@ public class GitService : McpServiceBase, IGitService
                 var remote = repo.Network.Remotes["origin"];
                 if (remote == null)
                 {
+                    var ex = new InvalidOperationException("Remote 'origin' not found");
+                    McpLogger?.Error($"{LogPrefix} PushAsync: {ex.Message}", ex);
                     return new GitPushResult
                     {
                         Success = false,
-                        Message = "Remote 'origin' not found"
+                        Message = ex.Message
                     };
                 }
 
                 var remoteUrl = repo.Network.Remotes["origin"].Url;
+                McpLogger?.Debug($"{LogPrefix} PushAsync: リモートURL: {MaskRemoteUrl(remoteUrl)}");
 
                 // 現在のブランチ取得
                 var branch = repo.Head;
+                McpLogger?.Debug($"{LogPrefix} PushAsync: 現在のブランチ: {branch.FriendlyName}");
 
                 // Push実行
+                McpLogger?.Info($"{LogPrefix} PushAsync: Push実行中...");
                 var options = new PushOptions
                 {
                     CredentialsProvider = (url, user, cred) =>
@@ -497,6 +544,7 @@ public class GitService : McpServiceBase, IGitService
 
                 repo.Network.Push(branch, options);
 
+                McpLogger?.Info($"{LogPrefix} PushAsync 完了: remote={remote.Name}, branch={branch.FriendlyName}");
                 return new GitPushResult
                 {
                     Success = true,
@@ -505,6 +553,7 @@ public class GitService : McpServiceBase, IGitService
             }
             catch (Exception ex)
             {
+                McpLogger?.Error($"{LogPrefix} PushAsync: Push failed: {ex.Message}", ex);
                 return new GitPushResult
                 {
                     Success = false,
@@ -523,6 +572,8 @@ public class GitService : McpServiceBase, IGitService
         string tagName,
         string? message = null)  // null = 軽量タグ、あり = 注釈付きタグ
     {
+        McpLogger?.Info($"{LogPrefix} CreateTagAsync 開始: repositoryKey={repositoryKey}, repoPath={repoPath}, tagName={tagName}, hasMessage={!string.IsNullOrEmpty(message)}");
+
         return await Task.Run(() =>
         {
             try
@@ -530,9 +581,11 @@ public class GitService : McpServiceBase, IGitService
                 // Git Identityチェック（注釈付きタグの場合のみ必要）
                 if (!string.IsNullOrEmpty(message))
                 {
+                    McpLogger?.Debug($"{LogPrefix} CreateTagAsync: Git Identityチェック開始（注釈付きタグ）");
                     var (email, username) = _gitSettings.ResolveGitIdentity(repositoryKey);
                     if (string.IsNullOrEmpty(email) || string.IsNullOrEmpty(username))
                     {
+                        McpLogger?.Warn($"{LogPrefix} CreateTagAsync: Git email or username not configured");
                         return new GitTagResult
                         {
                             Success = false,
@@ -541,21 +594,26 @@ public class GitService : McpServiceBase, IGitService
                     }
 
                     // リポジトリチェック
+                    McpLogger?.Debug($"{LogPrefix} CreateTagAsync: リポジトリ有効性チェック: {repoPath}");
                     if (!Repository.IsValid(repoPath))
                     {
+                        var ex = new InvalidOperationException($"Not a valid git repository: {repoPath}");
+                        McpLogger?.Error($"{LogPrefix} CreateTagAsync: {ex.Message}", ex);
                         return new GitTagResult
                         {
                             Success = false,
-                            Message = $"Not a valid git repository: {repoPath}"
+                            Message = ex.Message
                         };
                     }
 
                     using var repo = new Repository(repoPath);
 
                     // 注釈付きタグ
+                    McpLogger?.Info($"{LogPrefix} CreateTagAsync: 注釈付きタグを作成中...");
                     var signature = new Signature(username, email, DateTimeOffset.Now);
                     var tag = repo.Tags.Add(tagName, repo.Head.Tip, signature, message);
 
+                    McpLogger?.Info($"{LogPrefix} CreateTagAsync 完了: tagName={tagName}（注釈付き）");
                     return new GitTagResult
                     {
                         Success = true,
@@ -566,18 +624,23 @@ public class GitService : McpServiceBase, IGitService
                 else
                 {
                     // 軽量タグ（Email/Username不要）
+                    McpLogger?.Debug($"{LogPrefix} CreateTagAsync: リポジトリ有効性チェック: {repoPath}");
                     if (!Repository.IsValid(repoPath))
                     {
+                        var ex = new InvalidOperationException($"Not a valid git repository: {repoPath}");
+                        McpLogger?.Error($"{LogPrefix} CreateTagAsync: {ex.Message}", ex);
                         return new GitTagResult
                         {
                             Success = false,
-                            Message = $"Not a valid git repository: {repoPath}"
+                            Message = ex.Message
                         };
                     }
 
                     using var repo = new Repository(repoPath);
+                    McpLogger?.Info($"{LogPrefix} CreateTagAsync: 軽量タグを作成中...");
                     var tag = repo.Tags.Add(tagName, repo.Head.Tip);
 
+                    McpLogger?.Info($"{LogPrefix} CreateTagAsync 完了: tagName={tagName}（軽量）");
                     return new GitTagResult
                     {
                         Success = true,
@@ -588,6 +651,7 @@ public class GitService : McpServiceBase, IGitService
             }
             catch (Exception ex)
             {
+                McpLogger?.Error($"{LogPrefix} CreateTagAsync: Tag creation failed: {ex.Message}", ex);
                 return new GitTagResult
                 {
                     Success = false,
@@ -605,14 +669,18 @@ public class GitService : McpServiceBase, IGitService
         string repoPath,
         string tagName)
     {
+        McpLogger?.Info($"{LogPrefix} PushTagAsync 開始: repositoryKey={repositoryKey}, repoPath={repoPath}, tagName={tagName}");
+
         return await Task.Run(() =>
         {
             try
             {
                 // Tokenチェック
+                McpLogger?.Debug($"{LogPrefix} PushTagAsync: Tokenチェック開始");
                 var token = _gitSettings.ResolveToken(repositoryKey);
                 if (token == null)
                 {
+                    McpLogger?.Warn($"{LogPrefix} PushTagAsync: Git token not configured - skipping tag push");
                     return new GitPushResult
                     {
                         Success = false,
@@ -621,12 +689,15 @@ public class GitService : McpServiceBase, IGitService
                 }
 
                 // リポジトリチェック
+                McpLogger?.Debug($"{LogPrefix} PushTagAsync: リポジトリ有効性チェック: {repoPath}");
                 if (!Repository.IsValid(repoPath))
                 {
+                    var ex = new InvalidOperationException($"Not a valid git repository: {repoPath}");
+                    McpLogger?.Error($"{LogPrefix} PushTagAsync: {ex.Message}", ex);
                     return new GitPushResult
                     {
                         Success = false,
-                        Message = $"Not a valid git repository: {repoPath}"
+                        Message = ex.Message
                     };
                 }
 
@@ -636,27 +707,33 @@ public class GitService : McpServiceBase, IGitService
                 var remote = repo.Network.Remotes["origin"];
                 if (remote == null)
                 {
+                    var ex = new InvalidOperationException("Remote 'origin' not found");
+                    McpLogger?.Error($"{LogPrefix} PushTagAsync: {ex.Message}", ex);
                     return new GitPushResult
                     {
                         Success = false,
-                        Message = "Remote 'origin' not found"
+                        Message = ex.Message
                     };
                 }
 
                 var remoteUrl = repo.Network.Remotes["origin"].Url;
+                McpLogger?.Debug($"{LogPrefix} PushTagAsync: リモートURL: {MaskRemoteUrl(remoteUrl)}");
 
                 // タグ存在確認
                 var tag = repo.Tags[tagName];
                 if (tag == null)
                 {
+                    var ex = new InvalidOperationException($"Tag '{tagName}' not found");
+                    McpLogger?.Error($"{LogPrefix} PushTagAsync: {ex.Message}", ex);
                     return new GitPushResult
                     {
                         Success = false,
-                        Message = $"Tag '{tagName}' not found"
+                        Message = ex.Message
                     };
                 }
 
                 // Push実行
+                McpLogger?.Info($"{LogPrefix} PushTagAsync: タグをPush中...");
                 var options = new PushOptions
                 {
                     CredentialsProvider = (url, user, cred) =>
@@ -665,6 +742,7 @@ public class GitService : McpServiceBase, IGitService
 
                 repo.Network.Push(remote, $"refs/tags/{tagName}", options);
 
+                McpLogger?.Info($"{LogPrefix} PushTagAsync 完了: tagName={tagName}");
                 return new GitPushResult
                 {
                     Success = true,
@@ -673,6 +751,7 @@ public class GitService : McpServiceBase, IGitService
             }
             catch (Exception ex)
             {
+                McpLogger?.Error($"{LogPrefix} PushTagAsync: Push failed: {ex.Message}", ex);
                 return new GitPushResult
                 {
                     Success = false,
@@ -695,14 +774,17 @@ public class GitService : McpServiceBase, IGitService
         string filePath,
         string? customMessage = null)
     {
+        McpLogger?.Info($"{LogPrefix} CommitAndPushAsync 開始: repositoryKey={repositoryKey}, filePath={filePath}");
+
         // 1. Commit
         var commitResult = await CommitAsync(repositoryKey, repoPath, filePath, customMessage);
         if (!commitResult.Success)
         {
+            McpLogger?.Error($"{LogPrefix} CommitAndPushAsync: Commit失敗: {commitResult.Message}");
             return new GitCommitAndPushResult
             {
                 Success = false,
-                Message = $"Commit failed: {commitResult.Message}"
+                Message = $"Commit失敗: {commitResult.Message}"
             };
         }
 
@@ -710,18 +792,20 @@ public class GitService : McpServiceBase, IGitService
         var pushResult = await PushAsync(repositoryKey, repoPath);
         if (!pushResult.Success)
         {
+            McpLogger?.Warn($"{LogPrefix} CommitAndPushAsync: Push失敗: {pushResult.Message}");
             return new GitCommitAndPushResult
             {
                 Success = false,
-                Message = $"Push failed: {pushResult.Message}",
+                Message = $"Push失敗: {pushResult.Message}",
                 CommitHash = commitResult.CommitHash
             };
         }
 
+        McpLogger?.Info($"{LogPrefix} CommitAndPushAsync 完了: commitHash={commitResult.CommitHash}");
         return new GitCommitAndPushResult
         {
             Success = true,
-            Message = "Committed and pushed successfully",
+            Message = "コミットとプッシュが成功しました",
             CommitHash = commitResult.CommitHash
         };
     }
@@ -734,24 +818,28 @@ public class GitService : McpServiceBase, IGitService
         string repoPath,
         string? customMessage = null)
     {
+        McpLogger?.Info($"{LogPrefix} CommitAllAndPushAsync 開始: repositoryKey={repositoryKey}");
+
         // 1. Commit All
         var commitResult = await CommitAllAsync(repositoryKey, repoPath, customMessage);
         if (!commitResult.Success)
         {
+            McpLogger?.Error($"{LogPrefix} CommitAllAndPushAsync: Commit失敗: {commitResult.Message}");
             return new GitCommitAndPushResult
             {
                 Success = false,
-                Message = $"Commit failed: {commitResult.Message}"
+                Message = $"Commit失敗: {commitResult.Message}"
             };
         }
 
         // 変更がない場合はプッシュしない
         if (commitResult.CommitHash == null)
         {
+            McpLogger?.Info($"{LogPrefix} CommitAllAndPushAsync: 変更がないためPushをスキップ");
             return new GitCommitAndPushResult
             {
                 Success = true,
-                Message = "No changes to push",
+                Message = "プッシュする変更はありません",
                 CommitHash = null
             };
         }
@@ -760,18 +848,20 @@ public class GitService : McpServiceBase, IGitService
         var pushResult = await PushAsync(repositoryKey, repoPath);
         if (!pushResult.Success)
         {
+            McpLogger?.Warn($"{LogPrefix} CommitAllAndPushAsync: Push失敗: {pushResult.Message}");
             return new GitCommitAndPushResult
             {
                 Success = false,
-                Message = $"Push failed: {pushResult.Message}",
+                Message = $"Push失敗: {pushResult.Message}",
                 CommitHash = commitResult.CommitHash
             };
         }
 
+        McpLogger?.Info($"{LogPrefix} CommitAllAndPushAsync 完了: commitHash={commitResult.CommitHash}");
         return new GitCommitAndPushResult
         {
             Success = true,
-            Message = "Committed and pushed successfully",
+            Message = "コミットとプッシュが成功しました",
             CommitHash = commitResult.CommitHash
         };
     }
@@ -785,10 +875,13 @@ public class GitService : McpServiceBase, IGitService
         string tagName,
         string? message = null)
     {
+        McpLogger?.Info($"{LogPrefix} CreateAndPushTagAsync 開始: repositoryKey={repositoryKey}, tagName={tagName}");
+
         // 1. Tag作成
         var tagResult = await CreateTagAsync(repositoryKey, repoPath, tagName, message);
         if (!tagResult.Success)
         {
+            McpLogger?.Error($"{LogPrefix} CreateAndPushTagAsync: タグ作成失敗: {tagResult.Message}");
             return tagResult;
         }
 
@@ -796,18 +889,20 @@ public class GitService : McpServiceBase, IGitService
         var pushResult = await PushTagAsync(repositoryKey, repoPath, tagName);
         if (!pushResult.Success)
         {
+            McpLogger?.Warn($"{LogPrefix} CreateAndPushTagAsync: タグ作成後のプッシュ失敗: {pushResult.Message}");
             return new GitTagResult
             {
                 Success = false,
-                Message = $"Tag created but push failed: {pushResult.Message}",
+                Message = $"タグ作成後のプッシュ失敗: {pushResult.Message}",
                 TagName = tagName
             };
         }
 
+        McpLogger?.Info($"{LogPrefix} CreateAndPushTagAsync 完了: tagName={tagName}");
         return new GitTagResult
         {
             Success = true,
-            Message = $"Tag created and pushed: {tagName}",
+            Message = $"タグが作成され、プッシュされました: {tagName}",
             TagName = tagName
         };
     }

@@ -13,6 +13,7 @@ public class GitHubService : McpServiceBase, IGitHubService
     private readonly IGitHubSettings _gitHubSettings;
     private readonly IMemoryCache _cache;
     private readonly TimeSpan _cacheExpiration;
+    private const string LogPrefix = $"{nameof(GitHubService)}:";
 
     /// <summary>
     /// コンストラクタ
@@ -29,6 +30,8 @@ public class GitHubService : McpServiceBase, IGitHubService
     public GitHubService(IMcpLogger mcpLogger, IGitHubSettings gitHubSettings, IMemoryCache cache, IGitHubClient gitHubClient)
         : base(mcpLogger)
     {
+        McpLogger?.Info($"{LogPrefix} 初期化処理開始");
+
         _gitHubSettings = gitHubSettings;
         _cache = cache;
         _cacheExpiration = TimeSpan.FromMinutes(_gitHubSettings.CacheExpirationMinutes);
@@ -40,6 +43,8 @@ public class GitHubService : McpServiceBase, IGitHubService
         {
             _client.Connection.Credentials = new Credentials(_gitHubSettings.GlobalPersonalAccessToken);
         }
+
+        McpLogger?.Info($"{LogPrefix} 初期化完了");
     }
 
     /// <summary>
@@ -47,7 +52,10 @@ public class GitHubService : McpServiceBase, IGitHubService
     /// </summary>
     public IEnumerable<string> GetRepositoryKeys()
     {
-        return _gitHubSettings.GitHubRepositories.Keys;
+        McpLogger?.Debug($"{LogPrefix} GetRepositoryKeys 開始");
+        var keys = _gitHubSettings.GitHubRepositories.Keys;
+        McpLogger?.Debug($"{LogPrefix} GetRepositoryKeys 完了: {keys.Count()}件");
+        return keys;
     }
 
     /// <summary>
@@ -57,7 +65,10 @@ public class GitHubService : McpServiceBase, IGitHubService
     /// <returns>存在する場合はtrue、それ以外はfalse</returns>
     public bool RepositoryExists(string repositoryKey)
     {
-        return _gitHubSettings.GitHubRepositories.ContainsKey(repositoryKey);
+        McpLogger?.Debug($"{LogPrefix} RepositoryExists 開始: repositoryKey={repositoryKey}");
+        var exists = _gitHubSettings.GitHubRepositories.ContainsKey(repositoryKey);
+        McpLogger?.Debug($"{LogPrefix} RepositoryExists 完了: repositoryKey={repositoryKey}, exists={exists}");
+        return exists;
     }
 
     /// <summary>
@@ -67,10 +78,15 @@ public class GitHubService : McpServiceBase, IGitHubService
     /// <returns> リポジトリ情報、存在しない場合はnull </returns>
     public IGitHubRepositorySummary? GetRepositorySummary(string repositoryKey)
     {
+        McpLogger?.Debug($"{LogPrefix} GetRepositorySummary 開始: repositoryKey={repositoryKey}");
+        
         if (!_gitHubSettings.GitHubRepositories.TryGetValue(repositoryKey, out var config))
+        {
+            McpLogger?.Warn($"{LogPrefix} GetRepositorySummary: リポジトリが見つかりません: repositoryKey={repositoryKey}");
             return null;
+        }
 
-        return new GitHubRepositorySummary
+        var summary = new GitHubRepositorySummary
         {
             Key = repositoryKey,
             Owner = config.GitHubSource?.Owner ?? string.Empty,
@@ -80,6 +96,9 @@ public class GitHubService : McpServiceBase, IGitHubService
             LocalPath = config.LocalPath ?? string.Empty,
             HasLocalPath = !string.IsNullOrEmpty(config.LocalPath)
         };
+
+        McpLogger?.Debug($"{LogPrefix} GetRepositorySummary 完了: repositoryKey={repositoryKey}, Owner={summary.Owner}, Name={summary.Name}");
+        return summary;
     }
 
     /// <summary>
@@ -90,56 +109,80 @@ public class GitHubService : McpServiceBase, IGitHubService
     /// <returns>ファイル内容</returns>
     public async Task<string> GetFileContentAsync(string repositoryKey, string filePath)
     {
+        McpLogger?.Info($"{LogPrefix} GetFileContentAsync 開始: repositoryKey={repositoryKey}, filePath={filePath}");
+
         // リポジトリ設定を取得
         if (!_gitHubSettings.GitHubRepositories.TryGetValue(repositoryKey, out var repoSettings))
         {
-            throw new ArgumentException($"Repository '{repositoryKey}' not found in configuration.");
+            var ex = new ArgumentException($"Repository '{repositoryKey}' not found in configuration.");
+            McpLogger?.Critical($"{LogPrefix} GetFileContentAsync: リポジトリが設定に見つかりません: repositoryKey={repositoryKey}", ex);
+            throw ex;
         }
 
         if (repoSettings.PriorityDataSource == "Local" && !string.IsNullOrEmpty(repoSettings.LocalPath))
         {
+            McpLogger?.Debug($"{LogPrefix} GetFileContentAsync: ローカル優先モード: localPath={repoSettings.LocalPath}");
             try
             {
                 var fullPath = Path.Combine(repoSettings.LocalPath, filePath);
 
                 if (File.Exists(fullPath))
                 {
-                    return await File.ReadAllTextAsync(fullPath);
+                    McpLogger?.Info($"{LogPrefix} GetFileContentAsync: ローカルファイルから取得: fullPath={fullPath}");
+                    var content = await File.ReadAllTextAsync(fullPath);
+                    McpLogger?.Debug($"{LogPrefix} GetFileContentAsync 完了: サイズ={content.Length}文字");
+                    return content;
                 }
                 else if (repoSettings.GitHubSource != null)
                 {
+                    McpLogger?.Warn($"{LogPrefix} GetFileContentAsync: ローカルファイルが存在しないためGitHubにフォールバック: fullPath={fullPath}");
                     // ローカルにファイルが存在しない場合はGitHubから取得にフォールバック
-                    return await GetGitHubFileAsync(
+                    var content = await GetGitHubFileAsync(
                         repoSettings.GitHubSource.Owner,
                         repoSettings.GitHubSource.Name,
                         filePath,
                         repoSettings.GitHubSource.Branch
                     );
+                    McpLogger?.Info($"{LogPrefix} GetFileContentAsync 完了: GitHubフォールバックで取得成功");
+                    return content;
                 }
                 else
                 {
-                    throw new FileNotFoundException($"File not found: {filePath} in local path '{repoSettings.LocalPath}'");
+                    var ex = new FileNotFoundException($"File not found: {filePath} in local path '{repoSettings.LocalPath}'");
+                    McpLogger?.Critical($"{LogPrefix} GetFileContentAsync: ファイルが見つかりません: fullPath={fullPath}", ex);
+                    throw ex;
                 }
+            }
+            catch (FileNotFoundException)
+            {
+                throw;
             }
             catch (Exception ex)
             {
-                throw new Exception($"Error accessing file: {ex.Message}", ex);
+                var wrappedEx = new Exception($"Error accessing file: {ex.Message}", ex);
+                McpLogger?.Critical($"{LogPrefix} GetFileContentAsync: ファイルアクセスエラー: {ex.Message}", wrappedEx);
+                throw wrappedEx;
             }
         }
 
         // Local優先でない場合、またはローカルパスが設定されていない場合はGitHubから取得
         if (repoSettings.GitHubSource != null)
         {
+            McpLogger?.Debug($"{LogPrefix} GetFileContentAsync: GitHubから取得: owner={repoSettings.GitHubSource.Owner}, repo={repoSettings.GitHubSource.Name}");
             // GitHubから取得（キャッシュ付き）
-            return await GetGitHubFileAsync(
+            var content = await GetGitHubFileAsync(
                 repoSettings.GitHubSource.Owner,
                 repoSettings.GitHubSource.Name,
                 filePath,
                 repoSettings.GitHubSource.Branch
             );
+            McpLogger?.Info($"{LogPrefix} GetFileContentAsync 完了: GitHubから取得成功");
+            return content;
         }
 
-        throw new InvalidOperationException($"Invalid repository configuration for '{repositoryKey}'.");
+        var invalidOpEx = new InvalidOperationException($"Invalid repository configuration for '{repositoryKey}'.");
+        McpLogger?.Critical($"{LogPrefix} GetFileContentAsync: 無効なリポジトリ設定: repositoryKey={repositoryKey}", invalidOpEx);
+        throw invalidOpEx;
     }
 
     /// <summary>
@@ -154,35 +197,47 @@ public class GitHubService : McpServiceBase, IGitHubService
         string directory = "",
         string? extension = null)
     {
+        McpLogger?.Info($"{LogPrefix} ListFilesAsync 開始: repositoryKey={repositoryKey}, directory={directory}, extension={extension}");
+
         if (!_gitHubSettings.GitHubRepositories.TryGetValue(repositoryKey, out var repoSettings))
         {
-            throw new ArgumentException($"Repository '{repositoryKey}' not found in configuration.");
+            var ex = new ArgumentException($"Repository '{repositoryKey}' not found in configuration.");
+            McpLogger?.Critical($"{LogPrefix} ListFilesAsync: リポジトリが設定に見つかりません: repositoryKey={repositoryKey}", ex);
+            throw ex;
         }
 
         if (repoSettings.PriorityDataSource == "Local" && !string.IsNullOrEmpty(repoSettings.LocalPath))
         {
+            McpLogger?.Debug($"{LogPrefix} ListFilesAsync: ローカル優先モード: localPath={repoSettings.LocalPath}");
             try
             {
                 // ローカルファイル一覧を取得
-                return await ListLocalFilesAsync(repoSettings.LocalPath, directory, extension);
+                var files = await ListLocalFilesAsync(repoSettings.LocalPath, directory, extension);
+                McpLogger?.Info($"{LogPrefix} ListFilesAsync 完了: ローカルから{files.Count}件取得");
+                return files;
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                McpLogger?.Warn($"{LogPrefix} ListFilesAsync: ローカルアクセス失敗、GitHubにフォールバック: {ex.Message}");
                 try
                 {
                     // ローカルにアクセスできない場合はGitHubから取得にフォールバック
-                    return await ListGitHubFilesAsync(
+                    var files = await ListGitHubFilesAsync(
                         repoSettings.GitHubSource!.Owner,
                         repoSettings.GitHubSource.Name,
                         directory,
                         repoSettings.GitHubSource.Branch,
                         extension
                     );
+                    McpLogger?.Info($"{LogPrefix} ListFilesAsync 完了: GitHubフォールバックで{files.Count}件取得");
+                    return files;
                 }
-                catch (Exception ex)
+                catch (Exception fallbackEx)
                 {
                     // 両方失敗した場合は例外をスロー
-                    throw new Exception($"Error accessing files: {ex.Message}", ex);
+                    var wrappedEx = new Exception($"Error accessing files: {fallbackEx.Message}", fallbackEx);
+                    McpLogger?.Critical($"{LogPrefix} ListFilesAsync: 両方のデータソースでエラー: {fallbackEx.Message}", wrappedEx);
+                    throw wrappedEx;
                 }
             }
         }
@@ -190,16 +245,21 @@ public class GitHubService : McpServiceBase, IGitHubService
         // Local優先でない場合、またはローカルパスが設定されていない場合はGitHubから取得
         if (repoSettings.GitHubSource != null)
         {
-            return await ListGitHubFilesAsync(
+            McpLogger?.Debug($"{LogPrefix} ListFilesAsync: GitHubから取得: owner={repoSettings.GitHubSource.Owner}, repo={repoSettings.GitHubSource.Name}");
+            var files = await ListGitHubFilesAsync(
                 repoSettings.GitHubSource.Owner,
                 repoSettings.GitHubSource.Name,
                 directory,
                 repoSettings.GitHubSource.Branch,
                 extension
             );
+            McpLogger?.Info($"{LogPrefix} ListFilesAsync 完了: GitHubから{files.Count}件取得");
+            return files;
         }
 
-        throw new InvalidOperationException($"Invalid repository configuration for '{repositoryKey}'.");
+        var invalidOpEx = new InvalidOperationException($"Invalid repository configuration for '{repositoryKey}'.");
+        McpLogger?.Critical($"{LogPrefix} ListFilesAsync: 無効なリポジトリ設定: repositoryKey={repositoryKey}", invalidOpEx);
+        throw invalidOpEx;
     }
 
     /// <summary>
@@ -212,12 +272,16 @@ public class GitHubService : McpServiceBase, IGitHubService
         string branch)
     {
         var cacheKey = $"github:{owner}/{repo}:{branch}:{path}";
+        McpLogger?.Debug($"{LogPrefix} GetGitHubFileAsync 開始: owner={owner}, repo={repo}, path={path}, branch={branch}");
 
         // キャッシュから取得を試みる
         if (_cache.TryGetValue(cacheKey, out string? cachedContent) && cachedContent != null)
         {
+            McpLogger?.Debug($"{LogPrefix} GetGitHubFileAsync: キャッシュヒット: cacheKey={cacheKey}");
             return cachedContent;
         }
+
+        McpLogger?.Debug($"{LogPrefix} GetGitHubFileAsync: キャッシュミス、GitHubから取得: cacheKey={cacheKey}");
 
         // GitHubから取得
         try
@@ -231,19 +295,29 @@ public class GitHubService : McpServiceBase, IGitHubService
 
             if (contents.Count == 0)
             {
-                throw new FileNotFoundException($"File not found: {path}");
+                var ex = new FileNotFoundException($"File not found: {path}");
+                McpLogger?.Critical($"{LogPrefix} GetGitHubFileAsync: ファイルが見つかりません: path={path}", ex);
+                throw ex;
             }
 
             var content = contents[0].Content;
 
             // キャッシュに保存
             _cache.Set(cacheKey, content, _cacheExpiration);
+            McpLogger?.Debug($"{LogPrefix} GetGitHubFileAsync 完了: サイズ={content.Length}文字, キャッシュに保存");
 
             return content;
         }
         catch (NotFoundException)
         {
-            throw new FileNotFoundException($"File not found: {path} in {owner}/{repo}");
+            var ex = new FileNotFoundException($"File not found: {path} in {owner}/{repo}");
+            McpLogger?.Critical($"{LogPrefix} GetGitHubFileAsync: ファイルが見つかりません: {owner}/{repo}/{path}", ex);
+            throw ex;
+        }
+        catch (Exception ex)
+        {
+            McpLogger?.Critical($"{LogPrefix} GetGitHubFileAsync: GitHub APIエラー: {ex.Message}", ex);
+            throw;
         }
     }
 
@@ -258,12 +332,16 @@ public class GitHubService : McpServiceBase, IGitHubService
         string? extension)
     {
         var cacheKey = $"github:list:{owner}/{repo}:{branch}:{directory}:{extension}";
+        McpLogger?.Debug($"{LogPrefix} ListGitHubFilesAsync 開始: owner={owner}, repo={repo}, directory={directory}, branch={branch}, extension={extension}");
 
         // キャッシュから取得を試みる
         if (_cache.TryGetValue(cacheKey, out List<string>? cachedList) && cachedList != null)
         {
+            McpLogger?.Debug($"{LogPrefix} ListGitHubFilesAsync: キャッシュヒット: {cachedList.Count}件");
             return cachedList;
         }
+
+        McpLogger?.Debug($"{LogPrefix} ListGitHubFilesAsync: キャッシュミス、GitHubから取得");
 
         // GitHubから取得
         var allFiles = new List<string>();
@@ -275,6 +353,7 @@ public class GitHubService : McpServiceBase, IGitHubService
 
         // キャッシュに保存
         _cache.Set(cacheKey, allFiles, _cacheExpiration);
+        McpLogger?.Debug($"{LogPrefix} ListGitHubFilesAsync 完了: {allFiles.Count}件取得、キャッシュに保存");
 
         return allFiles;
     }
@@ -290,6 +369,8 @@ public class GitHubService : McpServiceBase, IGitHubService
         List<string> files,
         string? extension)
     {
+        McpLogger?.Debug($"{LogPrefix} CollectFilesRecursivelyAsync: path={path ?? "(root)"}");
+
         try
         {
             IReadOnlyList<RepositoryContent> contents;
@@ -313,6 +394,9 @@ public class GitHubService : McpServiceBase, IGitHubService
                 );
             }
 
+            var fileCount = 0;
+            var dirCount = 0;
+
             foreach (var item in contents)
             {
                 if (item.Type == ContentType.File)
@@ -321,18 +405,28 @@ public class GitHubService : McpServiceBase, IGitHubService
                     if (extension == null || item.Path.EndsWith(extension, StringComparison.OrdinalIgnoreCase))
                     {
                         files.Add(item.Path);
+                        fileCount++;
                     }
                 }
                 else if (item.Type == ContentType.Dir)
                 {
+                    dirCount++;
                     // ディレクトリの場合は再帰的に探索
                     await CollectFilesRecursivelyAsync(owner, repo, item.Path, branch, files, extension);
                 }
             }
+
+            McpLogger?.Debug($"{LogPrefix} CollectFilesRecursivelyAsync 完了: path={path ?? "(root)"}, files={fileCount}, dirs={dirCount}");
         }
         catch (NotFoundException)
         {
+            McpLogger?.Warn($"{LogPrefix} CollectFilesRecursivelyAsync: ディレクトリが見つかりません: path={path}");
             // ディレクトリが存在しない場合は無視
+        }
+        catch (Exception ex)
+        {
+            McpLogger?.Error($"{LogPrefix} CollectFilesRecursivelyAsync: エラー発生: path={path}, error={ex.Message}", ex);
+            throw;
         }
     }
 
@@ -344,12 +438,15 @@ public class GitHubService : McpServiceBase, IGitHubService
         string directory,
         string? extensionString)
     {
+        McpLogger?.Debug($"{LogPrefix} ListLocalFilesAsync 開始: basePath={basePath}, directory={directory}, extension={extensionString}");
+
         var searchPath = string.IsNullOrEmpty(directory)
             ? basePath
             : Path.Combine(basePath, directory);
 
         if (!Directory.Exists(searchPath))
         {
+            McpLogger?.Warn($"{LogPrefix} ListLocalFilesAsync: ディレクトリが存在しません: searchPath={searchPath}");
             return new List<string>();
         }
 
@@ -359,6 +456,7 @@ public class GitHubService : McpServiceBase, IGitHubService
             .Select(f => Path.GetRelativePath(basePath, f).Replace("\\", "/"))
             .ToList();
 
+        McpLogger?.Debug($"{LogPrefix} ListLocalFilesAsync 完了: {files.Count}件取得");
         return await Task.FromResult(files);
     }
 
