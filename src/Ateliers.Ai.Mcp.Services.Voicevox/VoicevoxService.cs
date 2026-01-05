@@ -311,10 +311,10 @@ public sealed class VoicevoxService : McpServiceBase, IGenerateVoiceService, IDi
 
     public void Dispose()
     {
-        McpLogger?.Debug($"{LogPrefix} Dispose: リソース破棄開始");
+        McpLogger?.Debug($"{LogPrefix} Dispose: Start disposing resources");
         _synthesizer.Dispose();
         _gate.Dispose();
-        McpLogger?.Debug($"{LogPrefix} Dispose: リソース破棄完了");
+        McpLogger?.Debug($"{LogPrefix} Dispose: Completed disposing resources");
     }
 
     private async Task SaveTextFileAsync(
