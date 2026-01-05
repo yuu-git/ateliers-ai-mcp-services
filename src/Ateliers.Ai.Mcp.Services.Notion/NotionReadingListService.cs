@@ -8,12 +8,15 @@ namespace Ateliers.Ai.Mcp.Services.Notion;
 /// </summary>
 public class NotionReadingListService : NotionServiceBase, INotionReadingListService
 {
+    private const string ServiceLogPrefix = $"{nameof(NotionReadingListService)}:";
+
     /// <summary>
     /// コンストラクタ
     /// </summary>
     /// <param name="notionSettings"> Notion設定 </param>
     public NotionReadingListService(IMcpLogger mcpLogger, INotionSettings notionSettings) : base(mcpLogger, notionSettings)
     {
+        McpLogger?.Info($"{ServiceLogPrefix} 初期化完了");
     }
 
     /// <summary>
@@ -38,7 +41,10 @@ public class NotionReadingListService : NotionServiceBase, INotionReadingListSer
         string? description = null,
         string? author = null)
     {
+        McpLogger?.Info($"{ServiceLogPrefix} AddToReadingListAsync 開始: title={title}, type={type}, status={status}");
+
         var databaseId = GetReadingListDatabaseId();
+        McpLogger?.Debug($"{ServiceLogPrefix} AddToReadingListAsync: databaseId={databaseId}");
 
         var properties = new Dictionary<string, PropertyValue>
         {
@@ -55,24 +61,28 @@ public class NotionReadingListService : NotionServiceBase, INotionReadingListSer
         if (!string.IsNullOrWhiteSpace(link))
         {
             properties["Link"] = new UrlPropertyValue { Url = link };
+            McpLogger?.Debug($"{ServiceLogPrefix} AddToReadingListAsync: リンクを設定");
         }
 
         // Type
         if (!string.IsNullOrWhiteSpace(type))
         {
             properties["Type"] = new SelectPropertyValue { Select = new SelectOption { Name = type } };
+            McpLogger?.Debug($"{ServiceLogPrefix} AddToReadingListAsync: 種類を設定: {type}");
         }
 
         // Status
         if (!string.IsNullOrWhiteSpace(status))
         {
             properties["Status"] = new SelectPropertyValue { Select = new SelectOption { Name = status } };
+            McpLogger?.Debug($"{ServiceLogPrefix} AddToReadingListAsync: ステータスを設定: {status}");
         }
 
         // Priority
         if (!string.IsNullOrWhiteSpace(priority))
         {
             properties["Priority"] = new SelectPropertyValue { Select = new SelectOption { Name = priority } };
+            McpLogger?.Debug($"{ServiceLogPrefix} AddToReadingListAsync: 優先度を設定: {priority}");
         }
 
         // Date
@@ -82,10 +92,12 @@ public class NotionReadingListService : NotionServiceBase, INotionReadingListSer
             {
                 Date = new Date { Start = date.Value }
             };
+            McpLogger?.Debug($"{ServiceLogPrefix} AddToReadingListAsync: 日付を設定: {date.Value:yyyy-MM-dd}");
         }
 
         // Reference (Checkbox)
         properties["Reference"] = new CheckboxPropertyValue { Checkbox = reference };
+        McpLogger?.Debug($"{ServiceLogPrefix} AddToReadingListAsync: 参照フラグを設定: {reference}");
 
         // Tags
         if (tags != null && tags.Length > 0)
@@ -94,12 +106,14 @@ public class NotionReadingListService : NotionServiceBase, INotionReadingListSer
             {
                 MultiSelect = tags.Select(tag => new SelectOption { Name = tag }).ToList()
             };
+            McpLogger?.Debug($"{ServiceLogPrefix} AddToReadingListAsync: タグを設定: {string.Join(", ", tags)}");
         }
 
         // Registrant
         if (!string.IsNullOrWhiteSpace(registrant))
         {
             properties["Registrant"] = new SelectPropertyValue { Select = new SelectOption { Name = registrant } };
+            McpLogger?.Debug($"{ServiceLogPrefix} AddToReadingListAsync: 登録者を設定: {registrant}");
         }
 
         // Description (Rich Text)
@@ -112,6 +126,7 @@ public class NotionReadingListService : NotionServiceBase, INotionReadingListSer
                     new RichTextText { Text = new Text { Content = description } }
                 }
             };
+            McpLogger?.Debug($"{ServiceLogPrefix} AddToReadingListAsync: 説明を設定: サイズ={description.Length}文字");
         }
 
         // Author (Text)
@@ -124,6 +139,7 @@ public class NotionReadingListService : NotionServiceBase, INotionReadingListSer
                     new RichTextText { Text = new Text { Content = author } }
                 }
             };
+            McpLogger?.Debug($"{ServiceLogPrefix} AddToReadingListAsync: 著者を設定: {author}");
         }
 
         var request = new PagesCreateParameters
@@ -148,10 +164,15 @@ public class NotionReadingListService : NotionServiceBase, INotionReadingListSer
                     }
                 }
             };
+            McpLogger?.Debug($"{ServiceLogPrefix} AddToReadingListAsync: ノートを設定: サイズ={notes.Length}文字");
         }
 
+        McpLogger?.Info($"{ServiceLogPrefix} AddToReadingListAsync: Notion API 呼び出し中...");
         var page = await Client.Pages.CreateAsync(request);
-        return $"Reading List added successfully: {title} (ID: {page.Id})";
+
+        var result = $"Reading List added successfully: {title} (ID: {page.Id})";
+        McpLogger?.Info($"{ServiceLogPrefix} AddToReadingListAsync 完了: pageId={page.Id}");
+        return result;
     }
 
     /// <summary>
@@ -162,17 +183,21 @@ public class NotionReadingListService : NotionServiceBase, INotionReadingListSer
         string? priority = null,
         int limit = 20)
     {
+        McpLogger?.Info($"{ServiceLogPrefix} ListReadingListAsync 開始: status={status}, priority={priority}, limit={limit}");
+
         var databaseId = GetReadingListDatabaseId();
         var filters = new List<Filter>();
 
         if (!string.IsNullOrWhiteSpace(status))
         {
             filters.Add(new SelectFilter("Status", equal: status));
+            McpLogger?.Debug($"{ServiceLogPrefix} ListReadingListAsync: ステータスフィルタを追加: {status}");
         }
 
         if (!string.IsNullOrWhiteSpace(priority))
         {
             filters.Add(new SelectFilter("Priority", equal: priority));
+            McpLogger?.Debug($"{ServiceLogPrefix} ListReadingListAsync: 優先度フィルタを追加: {priority}");
         }
 
         var queryParams = new DatabasesQueryParameters
@@ -185,9 +210,13 @@ public class NotionReadingListService : NotionServiceBase, INotionReadingListSer
             queryParams.Filter = filters.Count == 1
                 ? filters[0]
                 : new CompoundFilter { And = filters };
+            McpLogger?.Debug($"{ServiceLogPrefix} ListReadingListAsync: フィルタ数={filters.Count}");
         }
 
+        McpLogger?.Info($"{ServiceLogPrefix} ListReadingListAsync: Notion API 呼び出し中...");
         var response = await Client.Databases.QueryAsync(databaseId, queryParams);
+
+        McpLogger?.Info($"{ServiceLogPrefix} ListReadingListAsync 完了: {response.Results.Count}件取得");
 
         if (response.Results.Count == 0)
         {
@@ -227,6 +256,8 @@ public class NotionReadingListService : NotionServiceBase, INotionReadingListSer
         string status,
         DateTime? completedDate = null)
     {
+        McpLogger?.Info($"{ServiceLogPrefix} UpdateReadingListStatusAsync 開始: readingListId={readingListId}, status={status}");
+
         var properties = new Dictionary<string, PropertyValue>
         {
             ["Status"] = new SelectPropertyValue { Select = new SelectOption { Name = status } }
@@ -239,11 +270,15 @@ public class NotionReadingListService : NotionServiceBase, INotionReadingListSer
             {
                 Date = new Date { Start = completedDate.Value }
             };
+            McpLogger?.Debug($"{ServiceLogPrefix} UpdateReadingListStatusAsync: 完了日を設定: {completedDate.Value:yyyy-MM-dd}");
         }
 
+        McpLogger?.Info($"{ServiceLogPrefix} UpdateReadingListStatusAsync: Notion API 呼び出し中...");
         var request = new PagesUpdateParameters { Properties = properties };
         var page = await Client.Pages.UpdateAsync(readingListId, request);
 
-        return $"Reading List status updated successfully (ID: {page.Id})";
+        var result = $"Reading List status updated successfully (ID: {page.Id})";
+        McpLogger?.Info($"{ServiceLogPrefix} UpdateReadingListStatusAsync 完了: pageId={page.Id}");
+        return result;
     }
 }

@@ -8,12 +8,15 @@ namespace Ateliers.Ai.Mcp.Services.Notion;
 /// </summary>
 public class NotionIdeasService : NotionServiceBase, INotionIdeasService
 {
+    private const string ServiceLogPrefix = $"{nameof(NotionIdeasService)}:";
+
     /// <summary>
     /// コンストラクタ
     /// </summary>
     /// <param name="notionSettings"> Notion設定 </param>
     public NotionIdeasService(IMcpLogger mcpLogger, INotionSettings notionSettings) : base(mcpLogger, notionSettings)
     {
+        McpLogger?.Info($"{ServiceLogPrefix} 初期化完了");
     }
 
     /// <summary>
@@ -31,7 +34,10 @@ public class NotionIdeasService : NotionServiceBase, INotionIdeasService
         string? link = null,
         string? registrant = null)
     {
+        McpLogger?.Info($"{ServiceLogPrefix} AddIdeaAsync 開始: title={title}, tags={tags?.Length ?? 0}件");
+
         var databaseId = GetIdeasDatabaseId();
+        McpLogger?.Debug($"{ServiceLogPrefix} AddIdeaAsync: databaseId={databaseId}");
 
         var properties = new Dictionary<string, PropertyValue>
         {
@@ -51,6 +57,7 @@ public class NotionIdeasService : NotionServiceBase, INotionIdeasService
             {
                 MultiSelect = tags.Select(tag => new SelectOption { Name = tag }).ToList()
             };
+            McpLogger?.Debug($"{ServiceLogPrefix} AddIdeaAsync: タグを設定: {string.Join(", ", tags)}");
         }
 
         // Status (デフォルト: アイデア)
@@ -60,12 +67,14 @@ public class NotionIdeasService : NotionServiceBase, INotionIdeasService
         if (!string.IsNullOrWhiteSpace(link))
         {
             properties["Link"] = new UrlPropertyValue { Url = link };
+            McpLogger?.Debug($"{ServiceLogPrefix} AddIdeaAsync: リンクを設定");
         }
 
         // Registrant
         if (!string.IsNullOrWhiteSpace(registrant))
         {
             properties["Registrant"] = new SelectPropertyValue { Select = new SelectOption { Name = registrant } };
+            McpLogger?.Debug($"{ServiceLogPrefix} AddIdeaAsync: 登録者を設定: {registrant}");
         }
 
         var request = new PagesCreateParameters
@@ -90,10 +99,15 @@ public class NotionIdeasService : NotionServiceBase, INotionIdeasService
                     }
                 }
             };
+            McpLogger?.Debug($"{ServiceLogPrefix} AddIdeaAsync: コンテンツを設定: サイズ={content.Length}文字");
         }
 
+        McpLogger?.Info($"{ServiceLogPrefix} AddIdeaAsync: Notion API 呼び出し中...");
         var page = await Client.Pages.CreateAsync(request);
-        return $"Idea created successfully: {title} (ID: {page.Id})";
+
+        var result = $"Idea created successfully: {title} (ID: {page.Id})";
+        McpLogger?.Info($"{ServiceLogPrefix} AddIdeaAsync 完了: pageId={page.Id}");
+        return result;
     }
 
     /// <summary>
@@ -104,6 +118,8 @@ public class NotionIdeasService : NotionServiceBase, INotionIdeasService
         string[]? tags = null,
         int limit = 10)
     {
+        McpLogger?.Info($"{ServiceLogPrefix} SearchIdeasAsync 開始: keyword={keyword}, tags={tags?.Length ?? 0}件, limit={limit}");
+
         var databaseId = GetIdeasDatabaseId();
         var filters = new List<Filter>();
 
@@ -111,6 +127,7 @@ public class NotionIdeasService : NotionServiceBase, INotionIdeasService
         if (!string.IsNullOrWhiteSpace(keyword))
         {
             filters.Add(new TitleFilter("Name", contains: keyword));
+            McpLogger?.Debug($"{ServiceLogPrefix} SearchIdeasAsync: キーワードフィルタを追加: {keyword}");
         }
 
         // タグフィルタ
@@ -120,6 +137,7 @@ public class NotionIdeasService : NotionServiceBase, INotionIdeasService
             {
                 filters.Add(new MultiSelectFilter("Tags", contains: tag));
             }
+            McpLogger?.Debug($"{ServiceLogPrefix} SearchIdeasAsync: タグフィルタを追加: {string.Join(", ", tags)}");
         }
 
         var queryParams = new DatabasesQueryParameters
@@ -132,9 +150,13 @@ public class NotionIdeasService : NotionServiceBase, INotionIdeasService
             queryParams.Filter = filters.Count == 1
                 ? filters[0]
                 : new CompoundFilter { And = filters };
+            McpLogger?.Debug($"{ServiceLogPrefix} SearchIdeasAsync: フィルタ数={filters.Count}");
         }
 
+        McpLogger?.Info($"{ServiceLogPrefix} SearchIdeasAsync: Notion API 呼び出し中...");
         var response = await Client.Databases.QueryAsync(databaseId, queryParams);
+
+        McpLogger?.Info($"{ServiceLogPrefix} SearchIdeasAsync 完了: {response.Results.Count}件取得");
 
         if (response.Results.Count == 0)
         {
@@ -169,6 +191,8 @@ public class NotionIdeasService : NotionServiceBase, INotionIdeasService
         string? status = null,
         string? link = null)
     {
+        McpLogger?.Info($"{ServiceLogPrefix} UpdateIdeaAsync 開始: ideaId={ideaId}");
+
         var properties = new Dictionary<string, PropertyValue>();
 
         if (!string.IsNullOrWhiteSpace(title))
@@ -180,6 +204,7 @@ public class NotionIdeasService : NotionServiceBase, INotionIdeasService
                     new RichTextText { Text = new Text { Content = title } }
                 }
             };
+            McpLogger?.Debug($"{ServiceLogPrefix} UpdateIdeaAsync: タイトルを更新: {title}");
         }
 
         if (tags != null && tags.Length > 0)
@@ -188,24 +213,29 @@ public class NotionIdeasService : NotionServiceBase, INotionIdeasService
             {
                 MultiSelect = tags.Select(tag => new SelectOption { Name = tag }).ToList()
             };
+            McpLogger?.Debug($"{ServiceLogPrefix} UpdateIdeaAsync: タグを更新: {string.Join(", ", tags)}");
         }
 
         if (!string.IsNullOrWhiteSpace(status))
         {
             properties["Status"] = new SelectPropertyValue { Select = new SelectOption { Name = status } };
+            McpLogger?.Debug($"{ServiceLogPrefix} UpdateIdeaAsync: ステータスを更新: {status}");
         }
 
         if (!string.IsNullOrWhiteSpace(link))
         {
             properties["Link"] = new UrlPropertyValue { Url = link };
+            McpLogger?.Debug($"{ServiceLogPrefix} UpdateIdeaAsync: リンクを更新");
         }
 
+        McpLogger?.Info($"{ServiceLogPrefix} UpdateIdeaAsync: Notion API 呼び出し中...");
         var request = new PagesUpdateParameters { Properties = properties };
         var page = await Client.Pages.UpdateAsync(ideaId, request);
 
         // Content 更新時はページブロックを追加
         if (!string.IsNullOrWhiteSpace(content))
         {
+            McpLogger?.Debug($"{ServiceLogPrefix} UpdateIdeaAsync: コンテンツを追加: サイズ={content.Length}文字");
             await Client.Blocks.AppendChildrenAsync(new BlockAppendChildrenRequest
             {
                 BlockId = ideaId,
@@ -225,6 +255,8 @@ public class NotionIdeasService : NotionServiceBase, INotionIdeasService
             });
         }
 
-        return $"Idea updated successfully (ID: {page.Id})";
+        var result = $"Idea updated successfully (ID: {page.Id})";
+        McpLogger?.Info($"{ServiceLogPrefix} UpdateIdeaAsync 完了: pageId={page.Id}");
+        return result;
     }
 }
