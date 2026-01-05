@@ -4,23 +4,53 @@ using System.Text;
 
 namespace Ateliers.Ai.Mcp.Services.Ffmpeg;
 
+/// <summary>
+/// FFmpegを使用したメディア合成サービス
+/// </summary>
+/// <remarks>
+/// このサービスは、FFmpegコマンドラインツールを利用して、画像と音声を組み合わせた動画を生成します。
+/// </remarks>
 public sealed class FfmpegService : McpServiceBase, IMediaComposerService
 {
     private readonly IFfmpegServiceOptions _options;
+    private const string LogPrefix = $"{nameof(FfmpegService)}:";
 
+    /// <summary>
+    /// コンストラクタ
+    /// </summary>
+    /// <param name="mcpLogger"> 記録用のロガーを指定します。 </param>
+    /// <param name="options"> サービスの設定オプションを指定します。 </param>
     public FfmpegService(IMcpLogger mcpLogger, IFfmpegServiceOptions options)
         : base(mcpLogger)
     {
+        McpLogger?.Info($"{LogPrefix} 初期化処理開始");
+
+        if (options == null)
+        {
+            var ex = new ArgumentNullException(nameof(options));
+            McpLogger?.Critical($"{LogPrefix} 初期化失敗", ex);
+            throw ex;
+        }
+
         _options = options;
+
+        McpLogger?.Info($"{LogPrefix} 初期化完了");
     }
 
+    /// <inheritdoc/>
     public async Task<string> ComposeAsync(
         GenerateVideoRequest request,
         string outputFileName,
         CancellationToken cancellationToken = default)
     {
+        McpLogger?.Info("ビデオ合成処理開始");
+
         if (request.Slides.Count == 0)
-            throw new InvalidOperationException("At least one slide is required.");
+        {
+            var ex = new ArgumentException("スライド音声のペアは1つ以上指定する必要があります。", nameof(request.Slides));
+            McpLogger?.Critical($"{LogPrefix} ビデオ合成処理失敗: スライド音声ペア無し", ex);
+            throw ex;
+        }
 
         var outputDir = _options.CreateWorkDirectory(_options.MediaOutputDirectoryName, DateTime.Now.ToString("yyyyMMdd_HHmmssfff"));
 
@@ -94,6 +124,8 @@ public sealed class FfmpegService : McpServiceBase, IMediaComposerService
             $"-pix_fmt yuv420p " +
             $"\"{outputPath}\"";
 
+        McpLogger?.Info($"{LogPrefix} FFmpeg 実行開始：パラメータ {args}");
+
         var psi = new ProcessStartInfo
         {
             FileName = _options.FfmpegExecutablePath,
@@ -110,8 +142,12 @@ public sealed class FfmpegService : McpServiceBase, IMediaComposerService
         if (process.ExitCode != 0)
         {
             var error = await process.StandardError.ReadToEndAsync(ct);
-            throw new InvalidOperationException($"FFmpeg failed: {error}");
+            var ex = new InvalidOperationException($"FFmpeg の実行に失敗しました。ExitCode={process.ExitCode} エラー内容={error}");
+            McpLogger?.Critical($"{LogPrefix} FFmpeg 実行失敗", ex);
+            throw ex;
         }
+
+        McpLogger?.Info($"{LogPrefix} FFmpeg 実行完了");
     }
 
     private static string NormalizePath(string path) => path.Replace('\\', '/');
