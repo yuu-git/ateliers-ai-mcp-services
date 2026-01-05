@@ -9,11 +9,16 @@ namespace Ateliers.Ai.Mcp.Services.Git;
 public class GitService : McpServiceBase, IGitService
 {
     private readonly IGitSettings _gitSettings;
+    private const string LogPrefix = $"{nameof(GitService)}:";
 
     public GitService(IMcpLogger mcpLogger, IGitSettings gitSettings)
         : base(mcpLogger)
     {
+        McpLogger?.Info($"{LogPrefix} 初期化処理開始");
+
         _gitSettings = gitSettings;
+
+        McpLogger?.Info($"{LogPrefix} 初期化完了");
     }
 
     /// <summary>
@@ -21,6 +26,8 @@ public class GitService : McpServiceBase, IGitService
     /// </summary>
     public IEnumerable<string> GetRepositoryKeys()
     {
+        McpLogger?.Info($"{LogPrefix} リポジトリキーの一覧取得");
+
         return _gitSettings.GitRepositories.Keys;
     }
 
@@ -31,6 +38,8 @@ public class GitService : McpServiceBase, IGitService
     /// <returns>存在する場合はtrue、それ以外はfalse</returns>
     public bool RepositoryExists(string repositoryKey)
     {
+        McpLogger?.Info($"{LogPrefix} リポジトリの存在確認 {repositoryKey}");
+
         return _gitSettings.GitRepositories.ContainsKey(repositoryKey);
     }
 
@@ -41,6 +50,15 @@ public class GitService : McpServiceBase, IGitService
     /// <returns> リポジトリ情報、存在しない場合はnull </returns>
     public IGitRepositorySummary? GetRepositorySummary(string repositoryKey)
     {
+        McpLogger?.Info($"{LogPrefix} リポジトリサマリ取得開始 {repositoryKey}");
+
+        if (string.IsNullOrEmpty(repositoryKey))
+        {
+            var ex = new ArgumentNullException(nameof(repositoryKey), "リポジトリキーが指定されていません。");
+            McpLogger?.Critical($"{LogPrefix} {ex.Message}", ex);
+            throw ex;
+        }
+
         if (!_gitSettings.GitRepositories.TryGetValue(repositoryKey, out var config))
             return null;
 
@@ -48,12 +66,16 @@ public class GitService : McpServiceBase, IGitService
         if (repositoryInfo == null)
         {
             // キーに対するリポジトリ情報が見つからない場合
-            throw new InvalidOperationException($"Repository key not found: {repositoryKey}");
+            var ex = new InvalidOperationException($"リポジトリキーが見つかりません。{nameof(repositoryKey)}={repositoryKey}");
+            McpLogger?.Critical($"{LogPrefix} {ex.Message}", ex);
+            throw ex;
         }
         else if (string.IsNullOrEmpty(repositoryInfo.LocalPath))
         {
             // ローカルパスが設定されていない場合
-            throw new InvalidOperationException($"Local path not configured for repository key: {repositoryKey}");
+            var ex = new InvalidOperationException($"ローカルパスが設定されていません。{nameof(repositoryKey)}={repositoryKey}");
+            McpLogger?.Critical($"{LogPrefix} {ex.Message}", ex);
+            throw ex;
         }
 
         using var repo = new Repository(repositoryInfo.LocalPath);
@@ -61,17 +83,23 @@ public class GitService : McpServiceBase, IGitService
         if (repo == null)
         {
             // リポジトリが無効な場合
-            throw new InvalidOperationException($"Not a valid git repository: {repositoryInfo.LocalPath}");
+            var ex = new InvalidOperationException($"有効なGitリポジトリではありません。パス: {repositoryInfo.LocalPath}");
+            McpLogger?.Critical($"{LogPrefix} {ex.Message}", ex);
+            throw ex;
         }
 
         var status = repo.RetrieveStatus();
-        return new GitRepositorySummary
+        var repositorySummary = new GitRepositorySummary
         {
             Name = Path.GetFileName(repo.Info.WorkingDirectory.TrimEnd('/', '\\')),
             Branch = repo.Head.FriendlyName,
             LocalPath = repositoryInfo.LocalPath,
             HasLocalPath = !string.IsNullOrEmpty(repositoryInfo.LocalPath)
         };
+
+        McpLogger?.Info($"{LogPrefix} リポジトリサマリ取得完了");
+
+        return repositorySummary;
     }
 
     #region 基本Git操作
@@ -84,16 +112,29 @@ public class GitService : McpServiceBase, IGitService
     /// <returns> リポジトリ情報 </returns>
     public GitRepositoryInfoDto GetRepositoryInfo(string repositoryKey, bool remoteUrlMasked = true)
     {
+        McpLogger?.Info($"{LogPrefix} リポジトリ情報取得開始 {repositoryKey}");
+
+        if (string.IsNullOrEmpty(repositoryKey))
+        {
+            var ex = new ArgumentNullException(nameof(repositoryKey), "リポジトリキーが指定されていません。");
+            McpLogger?.Critical($"{LogPrefix} {ex.Message}", ex);
+            throw ex;
+        }
+
         var repositoryInfo = _gitSettings.GitRepositories.FirstOrDefault(repo => repo.Key == repositoryKey).Value;
         if (repositoryInfo == null)
         {
             // キーに対するリポジトリ情報が見つからない場合
-            throw new InvalidOperationException($"Repository key not found: {repositoryKey}");
+            var ex = new InvalidOperationException($"リポジトリキーが見つかりません。{nameof(repositoryKey)}={repositoryKey}");
+            McpLogger?.Critical($"{LogPrefix} {ex.Message}", ex);
+            throw ex;
         }
         else if (string.IsNullOrEmpty(repositoryInfo.LocalPath))
         {
             // ローカルパスが設定されていない場合
-            throw new InvalidOperationException($"Local path not configured for repository key: {repositoryKey}");
+            var ex = new InvalidOperationException($"ローカルパスが設定されていません。{nameof(repositoryKey)}={repositoryKey}");
+            McpLogger?.Critical($"{LogPrefix} {ex.Message}", ex);
+            throw ex;
         }
 
         using var repo = new Repository(repositoryInfo.LocalPath);
@@ -101,12 +142,14 @@ public class GitService : McpServiceBase, IGitService
         if (repo == null)
         {
             // リポジトリが無効な場合
-            throw new InvalidOperationException($"Not a valid git repository: {repositoryInfo.LocalPath}");
+            var ex = new InvalidOperationException($"有効なGitリポジトリではありません。パス: {repositoryInfo.LocalPath}");
+            McpLogger?.Critical($"{LogPrefix} {ex.Message}", ex);
+            throw ex;
         }
-
+        
         var status = repo.RetrieveStatus();
 
-        return new GitRepositoryInfoDto
+        var repositoryDto = new GitRepositoryInfoDto
         {
             RepositoryName = Path.GetFileName(repo.Info.WorkingDirectory.TrimEnd('/', '\\')),
             CurrentBranch = repo.Head.FriendlyName,
@@ -149,6 +192,10 @@ public class GitService : McpServiceBase, IGitService
 
             Tags = repo.Tags.Select(t => t.FriendlyName).ToList()
         };
+
+        McpLogger?.Info($"{LogPrefix} リポジトリ情報取得完了");
+
+        return repositoryDto;
     }
 
     /// <summary>
@@ -156,46 +203,56 @@ public class GitService : McpServiceBase, IGitService
     /// </summary>
     public async Task<GitPullResult> PullAsync(string repositoryKey, string repoPath)
     {
+        McpLogger?.Info($"{LogPrefix} Pull実行開始 {repositoryKey}");
+
         return await Task.Run(() =>
         {
             try
             {
                 // Tokenチェック
+                McpLogger?.Debug($"{LogPrefix} Tokenチェック開始");
                 var token = _gitSettings.ResolveToken(repositoryKey);
                 if (token == null)
                 {
+                    McpLogger?.Warn($"{LogPrefix} Gitトークンが設定されていません");
                     return new GitPullResult
                     {
                         Success = false,
-                        Message = "Git token not configured - skipping pull"
+                        Message = "Gitトークンが設定されていません - Pullをスキップします"
                     };
                 }
 
                 // Git Identityチェック
+                McpLogger?.Debug($"{LogPrefix} Git Identityチェック開始");
                 var (email, username) = _gitSettings.ResolveGitIdentity(repositoryKey);
                 if (string.IsNullOrEmpty(email) || string.IsNullOrEmpty(username))
                 {
+                    McpLogger?.Warn($"{LogPrefix} GitメールアドレスまたはユーザーIDが設定されていません");
                     return new GitPullResult
                     {
                         Success = false,
-                        Message = "Git email or username not configured."
+                        Message = "GitメールアドレスまたはユーザーIDが設定されていません。"
                     };
                 }
 
                 // リポジトリチェック
+                McpLogger?.Debug($"{LogPrefix} リポジトリ有効性チェック: {repoPath}");
                 if (!Repository.IsValid(repoPath))
                 {
+                    McpLogger?.Error($"{LogPrefix} 有効なGitリポジトリではありません: {repoPath}");
                     return new GitPullResult
                     {
                         Success = false,
-                        Message = $"Not a valid git repository: {repoPath}"
+                        Message = $"有効なGitリポジトリではありません: {repoPath}"
                     };
                 }
 
                 using var repo = new Repository(repoPath);
                 var remoteUrl = repo.Network.Remotes["origin"]?.Url;
+                McpLogger?.Debug($"{LogPrefix} リモートURL取得完了");
 
                 // Pull実行
+                McpLogger?.Info($"{LogPrefix} Pull実行中...");
                 var signature = new Signature(username, email, DateTimeOffset.Now);
                 var options = new PullOptions
                 {
@@ -207,34 +264,38 @@ public class GitService : McpServiceBase, IGitService
                 };
 
                 var result = Commands.Pull(repo, signature, options);
+                McpLogger?.Info($"{LogPrefix} Pullコマンド実行完了: {result.Status}");
 
                 // マージステータス確認
                 if (result.Status == MergeStatus.Conflicts)
                 {
+                    McpLogger?.Warn($"{LogPrefix} マージコンフリクトが検出されました");
                     return new GitPullResult
                     {
                         Success = false,
                         HasConflict = true,
-                        Message = "Merge conflict detected. Please resolve manually:\n" +
-                                  "1. Navigate to repository\n" +
-                                  "2. Run: git status\n" +
-                                  "3. Resolve conflicts\n" +
-                                  "4. Run: git add . && git commit"
+                        Message = "マージコンフリクトが検出されました。手動で解決してください:\n" +
+                                  "1. リポジトリに移動\n" +
+                                  "2. 実行: git status\n" +
+                                  "3. コンフリクトを解決\n" +
+                                  "4. 実行: git add . && git commit"
                     };
                 }
 
+                McpLogger?.Info($"{LogPrefix} Pull完了");
                 return new GitPullResult
                 {
                     Success = true,
-                    Message = $"Pull completed: {result.Status}"
+                    Message = $"Pull完了: {result.Status}"
                 };
             }
             catch (Exception ex)
             {
+                McpLogger?.Error($"{LogPrefix} Pull失敗: {ex.Message}", ex);
                 return new GitPullResult
                 {
                     Success = false,
-                    Message = $"Pull failed: {ex.Message}"
+                    Message = $"Pull失敗: {ex.Message}"
                 };
             }
         });
