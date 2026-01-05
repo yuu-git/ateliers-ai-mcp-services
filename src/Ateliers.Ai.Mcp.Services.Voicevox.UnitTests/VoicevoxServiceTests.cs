@@ -37,7 +37,11 @@ public sealed class VoicevoxServiceTests
         var request = new GenerateVoiceRequest
         {
             Text = "これはテスト音声です。",
-            OutputWavFileName = "test_output.wav"
+            OutputWavFileName = "test_output.wav",
+            Options = new VoicevoxGenerationOptions
+            {
+                StyleId = 1
+            }
         };
 
         // Act

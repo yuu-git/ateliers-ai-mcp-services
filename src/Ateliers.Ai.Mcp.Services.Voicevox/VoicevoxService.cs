@@ -122,7 +122,6 @@ public sealed class VoicevoxService : McpServiceBase, IGenerateVoiceService, IDi
 
     public async Task<string> GenerateVoiceFileAsync(
         IGenerateVoiceRequest request,
-        uint? styleId = null,
         CancellationToken cancellationToken = default)
     {
         McpLogger?.Info($"{LogPrefix} GenerateVoiceFileAsync 開始: text={request.Text.Length}文字, outputWavFileName={request.OutputWavFileName}");
@@ -130,6 +129,9 @@ public sealed class VoicevoxService : McpServiceBase, IGenerateVoiceService, IDi
         McpLogger?.Debug($"{LogPrefix} GenerateVoiceFileAsync: 作業ディレクトリ作成中...");
         var outputDir = _options.CreateWorkDirectory(_options.VoicevoxOutputDirectoryName, DateTime.Now.ToString("yyyyMMdd_HHmmssfff"));
         McpLogger?.Debug($"{LogPrefix} GenerateVoiceFileAsync: outputDir={outputDir}");
+
+        var voicevoxOptions = request.GetOptions<VoicevoxGenerationOptions>();
+        var styleId = voicevoxOptions?.StyleId;
 
         var outputWavPath = await SynthesizeToFileAsync(
             request.Text,
@@ -143,9 +145,8 @@ public sealed class VoicevoxService : McpServiceBase, IGenerateVoiceService, IDi
     }
 
     public async Task<IReadOnlyList<string>> GenerateVoiceFilesAsync(
-    IEnumerable<IGenerateVoiceRequest> requests,
-    uint? styleId = null,
-    CancellationToken cancellationToken = default)
+        IEnumerable<IGenerateVoiceRequest> requests,
+        CancellationToken cancellationToken = default)
     {
         var requestList = requests.ToList();
         McpLogger?.Info($"{LogPrefix} GenerateVoiceFilesAsync 開始: リクエスト数={requestList.Count}件");
@@ -161,6 +162,9 @@ public sealed class VoicevoxService : McpServiceBase, IGenerateVoiceService, IDi
         {
             index++;
             McpLogger?.Debug($"{LogPrefix} GenerateVoiceFilesAsync: 音声合成中 ({index}/{requestList.Count}): {request.OutputWavFileName}");
+
+            var voicevoxOptions = request.GetOptions<VoicevoxGenerationOptions>();
+            var styleId = voicevoxOptions?.StyleId;
 
             var outputWavPath = await SynthesizeToFileAsync(
                 request.Text,
