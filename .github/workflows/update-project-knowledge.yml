@@ -34,7 +34,7 @@ jobs:
       
       - name: Update submodule to latest
         run: |
-          git submodule update --remote --merge .submodules/ateliers-ai-mcp-projectbase
+          git submodule update --remote .submodules/ateliers-ai-mcp-projectbase
       
       - name: Get updated submodule commit
         id: updated_commit
