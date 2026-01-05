@@ -1,6 +1,6 @@
-ï»¿using Ateliers.Ai.Mcp.Services.GenericModels;
+using Ateliers.Ai.Mcp.Services.GenericModels;
 using Microsoft.Extensions.FileSystemGlobbing;
-using System.Text.RegularExpressions;
+using System.Text.Json;
 using VoicevoxCoreSharp.Core;
 using VoicevoxCoreSharp.Core.Enum;
 using VoicevoxCoreSharp.Core.Struct;
@@ -17,45 +17,45 @@ public sealed class VoicevoxService : McpServiceBase, IGenerateVoiceService, IDi
     public VoicevoxService(IMcpLogger mcpLogger, IVoicevoxServiceOptions options)
         : base(mcpLogger)
     {
-        McpLogger?.Info($"{LogPrefix} åˆæœŸåŒ–å‡¦ç†é–‹å§‹");
+        McpLogger?.Info($"{LogPrefix} ‰Šú‰»ˆ—ŠJn");
 
         if (options == null)
         {
             var ex = new ArgumentNullException(nameof(options));
-            McpLogger?.Critical($"{LogPrefix} åˆæœŸåŒ–å¤±æ•—", ex);
+            McpLogger?.Critical($"{LogPrefix} ‰Šú‰»¸”s", ex);
             throw ex;
         }
 
         _options = options;
 
-        McpLogger?.Debug($"{LogPrefix} OpenJTalk è¾æ›¸ãƒ‘ã‚¹è§£æ±ºä¸­...");
+        McpLogger?.Debug($"{LogPrefix} OpenJTalk «‘ƒpƒX‰ğŒˆ’†...");
         var openJTalkDictPath = ResolveOpenJTalkDictPath(options.ResourcePath);
-        McpLogger?.Debug($"{LogPrefix} OpenJTalk è¾æ›¸ãƒ‘ã‚¹: {openJTalkDictPath}");
+        McpLogger?.Debug($"{LogPrefix} OpenJTalk «‘ƒpƒX: {openJTalkDictPath}");
 
         // OpenJTalk
-        McpLogger?.Debug($"{LogPrefix} OpenJTalk åˆæœŸåŒ–ä¸­...");
+        McpLogger?.Debug($"{LogPrefix} OpenJTalk ‰Šú‰»’†...");
         var result = OpenJtalk.New(openJTalkDictPath, out var openJtalk);
-        EnsureOk(result, "OpenJTalkåˆæœŸåŒ–å¤±æ•—");
+        EnsureOk(result, "OpenJTalk‰Šú‰»¸”s");
 
         // onnxruntime
-        McpLogger?.Debug($"{LogPrefix} ONNX Runtime åˆæœŸåŒ–ä¸­...");
+        McpLogger?.Debug($"{LogPrefix} ONNX Runtime ‰Šú‰»’†...");
         result = Onnxruntime.LoadOnce(
             LoadOnnxruntimeOptions.Default(),
             out var onnxruntime);
-        EnsureOk(result, "ONNX RuntimeåˆæœŸåŒ–å¤±æ•—");
+        EnsureOk(result, "ONNX Runtime‰Šú‰»¸”s");
 
         // Synthesizer
-        McpLogger?.Debug($"{LogPrefix} Synthesizer åˆæœŸåŒ–ä¸­...");
+        McpLogger?.Debug($"{LogPrefix} Synthesizer ‰Šú‰»’†...");
         result = Synthesizer.New(
             onnxruntime,
             openJtalk,
             InitializeOptions.Default(),
             out _synthesizer);
-        EnsureOk(result, "SynthesizeråˆæœŸåŒ–å¤±æ•—");
+        EnsureOk(result, "Synthesizer‰Šú‰»¸”s");
 
         // Voice models
         var modelDir = Path.Combine(options.ResourcePath, "model");
-        McpLogger?.Debug($"{LogPrefix} éŸ³å£°ãƒ¢ãƒ‡ãƒ«ãƒ‡ã‚£ãƒ¬ã‚¯ãƒˆãƒª: {modelDir}");
+        McpLogger?.Debug($"{LogPrefix} ‰¹ºƒ‚ƒfƒ‹ƒfƒBƒŒƒNƒgƒŠ: {modelDir}");
 
         var matcher = new Matcher();
         matcher.AddIncludePatterns(new[] { "*.vvm" });
@@ -64,19 +64,19 @@ public sealed class VoicevoxService : McpServiceBase, IGenerateVoiceService, IDi
             .GetResultsInFullPath(modelDir)
             .ToList();
 
-        McpLogger?.Debug($"{LogPrefix} æ¤œå‡ºã•ã‚ŒãŸéŸ³å£°ãƒ¢ãƒ‡ãƒ«æ•°: {allModelPaths.Count}ä»¶");
+        McpLogger?.Debug($"{LogPrefix} ŒŸo‚³‚ê‚½‰¹ºƒ‚ƒfƒ‹”: {allModelPaths.Count}Œ");
 
         IEnumerable<string> modelPathsToLoad;
 
         if (options.VoiceModelNames is null || options.VoiceModelNames.Count == 0)
         {
-            // å…¨èª­ã¿è¾¼ã¿ï¼ˆå¾“æ¥ã©ãŠã‚Šï¼‰
+            // ‘S“Ç‚İ‚İi]—ˆ‚Ç‚¨‚èj
             modelPathsToLoad = allModelPaths;
-            McpLogger?.Info($"{LogPrefix} ã™ã¹ã¦ã®éŸ³å£°ãƒ¢ãƒ‡ãƒ«ã‚’èª­ã¿è¾¼ã¿ã¾ã™: {allModelPaths.Count}ä»¶");
+            McpLogger?.Info($"{LogPrefix} ‚·‚×‚Ä‚Ì‰¹ºƒ‚ƒfƒ‹‚ğ“Ç‚İ‚İ‚Ü‚·: {allModelPaths.Count}Œ");
         }
         else
         {
-            // æŒ‡å®šãƒ¢ãƒ‡ãƒ«ã®ã¿
+            // w’èƒ‚ƒfƒ‹‚Ì‚İ
             var normalizedNames = options.VoiceModelNames
                 .Select(n => Path.GetFileNameWithoutExtension(n))
                 .ToHashSet(StringComparer.OrdinalIgnoreCase);
@@ -86,7 +86,7 @@ public sealed class VoicevoxService : McpServiceBase, IGenerateVoiceService, IDi
                     normalizedNames.Contains(
                         Path.GetFileNameWithoutExtension(path)));
 
-            McpLogger?.Info($"{LogPrefix} æŒ‡å®šã•ã‚ŒãŸéŸ³å£°ãƒ¢ãƒ‡ãƒ«ã‚’èª­ã¿è¾¼ã¿ã¾ã™: {string.Join(", ", options.VoiceModelNames)}");
+            McpLogger?.Info($"{LogPrefix} w’è‚³‚ê‚½‰¹ºƒ‚ƒfƒ‹‚ğ“Ç‚İ‚İ‚Ü‚·: {string.Join(", ", options.VoiceModelNames)}");
         }
 
         if (!modelPathsToLoad.Any())
@@ -94,39 +94,39 @@ public sealed class VoicevoxService : McpServiceBase, IGenerateVoiceService, IDi
             var ex = new InvalidOperationException(
                 "No matching voice models (*.vvm) were found. " +
                 "Please check VoiceModelNames in VoicevoxServiceOptions.");
-            McpLogger?.Critical($"{LogPrefix} åˆæœŸåŒ–å¤±æ•—: éŸ³å£°ãƒ¢ãƒ‡ãƒ«ãŒè¦‹ã¤ã‹ã‚Šã¾ã›ã‚“", ex);
+            McpLogger?.Critical($"{LogPrefix} ‰Šú‰»¸”s: ‰¹ºƒ‚ƒfƒ‹‚ªŒ©‚Â‚©‚è‚Ü‚¹‚ñ", ex);
             throw ex;
         }
 
-        McpLogger?.Info($"{LogPrefix} éŸ³å£°ãƒ¢ãƒ‡ãƒ«ã‚’èª­ã¿è¾¼ã¿ä¸­: {modelPathsToLoad.Count()}ä»¶");
+        McpLogger?.Info($"{LogPrefix} ‰¹ºƒ‚ƒfƒ‹‚ğ“Ç‚İ‚İ’†: {modelPathsToLoad.Count()}Œ");
         var loadedCount = 0;
         foreach (var path in modelPathsToLoad)
         {
-            McpLogger?.Debug($"{LogPrefix} éŸ³å£°ãƒ¢ãƒ‡ãƒ«èª­ã¿è¾¼ã¿ä¸­: {Path.GetFileName(path)}");
+            McpLogger?.Debug($"{LogPrefix} ‰¹ºƒ‚ƒfƒ‹“Ç‚İ‚İ’†: {Path.GetFileName(path)}");
             result = VoiceModelFile.Open(path, out var voiceModel);
-            EnsureOk(result, $"éŸ³å£°ãƒ¢ãƒ‡ãƒ«èª­ã¿è¾¼ã¿å¤±æ•—: {Path.GetFileName(path)}");
+            EnsureOk(result, $"‰¹ºƒ‚ƒfƒ‹“Ç‚İ‚İ¸”s: {Path.GetFileName(path)}");
 
             result = _synthesizer.LoadVoiceModel(voiceModel);
-            EnsureOk(result, $"éŸ³å£°ãƒ¢ãƒ‡ãƒ«ãƒ­ãƒ¼ãƒ‰å¤±æ•—: {Path.GetFileName(path)}");
+            EnsureOk(result, $"‰¹ºƒ‚ƒfƒ‹ƒ[ƒh¸”s: {Path.GetFileName(path)}");
 
             voiceModel.Dispose();
             loadedCount++;
         }
 
-        McpLogger?.Info($"{LogPrefix} éŸ³å£°ãƒ¢ãƒ‡ãƒ«èª­ã¿è¾¼ã¿å®Œäº†: {loadedCount}ä»¶");
+        McpLogger?.Info($"{LogPrefix} ‰¹ºƒ‚ƒfƒ‹“Ç‚İ‚İŠ®—¹: {loadedCount}Œ");
 
         openJtalk.Dispose();
 
-        McpLogger?.Info($"{LogPrefix} åˆæœŸåŒ–å®Œäº†");
+        McpLogger?.Info($"{LogPrefix} ‰Šú‰»Š®—¹");
     }
 
     public async Task<string> GenerateVoiceFileAsync(
         IGenerateVoiceRequest request,
         CancellationToken cancellationToken = default)
     {
-        McpLogger?.Info($"{LogPrefix} GenerateVoiceFileAsync é–‹å§‹: text={request.Text.Length}æ–‡å­—, outputWavFileName={request.OutputWavFileName}");
+        McpLogger?.Info($"{LogPrefix} GenerateVoiceFileAsync ŠJn: text={request.Text.Length}•¶š, outputWavFileName={request.OutputWavFileName}");
 
-        McpLogger?.Debug($"{LogPrefix} GenerateVoiceFileAsync: ä½œæ¥­ãƒ‡ã‚£ãƒ¬ã‚¯ãƒˆãƒªä½œæˆä¸­...");
+        McpLogger?.Debug($"{LogPrefix} GenerateVoiceFileAsync: ì‹ÆƒfƒBƒŒƒNƒgƒŠì¬’†...");
         var outputDir = _options.CreateWorkDirectory(_options.VoicevoxOutputDirectoryName, DateTime.Now.ToString("yyyyMMdd_HHmmssfff"));
         McpLogger?.Debug($"{LogPrefix} GenerateVoiceFileAsync: outputDir={outputDir}");
 
@@ -134,13 +134,13 @@ public sealed class VoicevoxService : McpServiceBase, IGenerateVoiceService, IDi
         var styleId = voicevoxOptions?.StyleId;
 
         var outputWavPath = await SynthesizeToFileAsync(
-            request.Text,
+            request,
             outputDir,
-            request.OutputWavFileName,
+            voicevoxOptions,
             styleId,
             cancellationToken);
 
-        McpLogger?.Info($"{LogPrefix} GenerateVoiceFileAsync å®Œäº†: outputWavPath={outputWavPath}");
+        McpLogger?.Info($"{LogPrefix} GenerateVoiceFileAsync Š®—¹: outputWavPath={outputWavPath}");
         return outputWavPath;
     }
 
@@ -149,9 +149,9 @@ public sealed class VoicevoxService : McpServiceBase, IGenerateVoiceService, IDi
         CancellationToken cancellationToken = default)
     {
         var requestList = requests.ToList();
-        McpLogger?.Info($"{LogPrefix} GenerateVoiceFilesAsync é–‹å§‹: ãƒªã‚¯ã‚¨ã‚¹ãƒˆæ•°={requestList.Count}ä»¶");
+        McpLogger?.Info($"{LogPrefix} GenerateVoiceFilesAsync ŠJn: ƒŠƒNƒGƒXƒg”={requestList.Count}Œ");
 
-        McpLogger?.Debug($"{LogPrefix} GenerateVoiceFilesAsync: ä½œæ¥­ãƒ‡ã‚£ãƒ¬ã‚¯ãƒˆãƒªä½œæˆä¸­...");
+        McpLogger?.Debug($"{LogPrefix} GenerateVoiceFilesAsync: ì‹ÆƒfƒBƒŒƒNƒgƒŠì¬’†...");
         var outputDir = _options.CreateWorkDirectory(_options.VoicevoxOutputDirectoryName, DateTime.Now.ToString("yyyyMMdd_HHmmssfff"));
         McpLogger?.Debug($"{LogPrefix} GenerateVoiceFilesAsync: outputDir={outputDir}");
 
@@ -161,21 +161,21 @@ public sealed class VoicevoxService : McpServiceBase, IGenerateVoiceService, IDi
         foreach (var request in requestList)
         {
             index++;
-            McpLogger?.Debug($"{LogPrefix} GenerateVoiceFilesAsync: éŸ³å£°åˆæˆä¸­ ({index}/{requestList.Count}): {request.OutputWavFileName}");
+            McpLogger?.Debug($"{LogPrefix} GenerateVoiceFilesAsync: ‰¹º‡¬’† ({index}/{requestList.Count}): {request.OutputWavFileName}");
 
             var voicevoxOptions = request.GetOptions<VoicevoxGenerationOptions>();
             var styleId = voicevoxOptions?.StyleId;
 
             var outputWavPath = await SynthesizeToFileAsync(
-                request.Text,
+                request,
                 outputDir,
-                request.OutputWavFileName,
+                voicevoxOptions,
                 styleId,
                 cancellationToken);
             outputPaths.Add(outputWavPath);
         }
 
-        McpLogger?.Info($"{LogPrefix} GenerateVoiceFilesAsync å®Œäº†: {outputPaths.Count}ä»¶ã®éŸ³å£°ãƒ•ã‚¡ã‚¤ãƒ«ã‚’ç”Ÿæˆ");
+        McpLogger?.Info($"{LogPrefix} GenerateVoiceFilesAsync Š®—¹: {outputPaths.Count}Œ‚Ì‰¹ºƒtƒ@ƒCƒ‹‚ğ¶¬");
         return outputPaths;
     }
 
@@ -184,13 +184,13 @@ public sealed class VoicevoxService : McpServiceBase, IGenerateVoiceService, IDi
         uint? styleId = null,
         CancellationToken cancellationToken = default)
     {
-        McpLogger?.Debug($"{LogPrefix} SynthesizeAsync: éŸ³å£°åˆæˆé–‹å§‹: text={text.Length}æ–‡å­—, styleId={styleId}");
+        McpLogger?.Debug($"{LogPrefix} SynthesizeAsync: ‰¹º‡¬ŠJn: text={text.Length}•¶š, styleId={styleId}");
 
         await _gate.WaitAsync(cancellationToken);
         try
         {
             var sid = styleId ?? _options.DefaultStyleId;
-            McpLogger?.Debug($"{LogPrefix} SynthesizeAsync: ä½¿ç”¨ã™ã‚‹ã‚¹ã‚¿ã‚¤ãƒ«ID={sid}");
+            McpLogger?.Debug($"{LogPrefix} SynthesizeAsync: g—p‚·‚éƒXƒ^ƒCƒ‹ID={sid}");
 
             var result = _synthesizer.Tts(
                 text,
@@ -199,9 +199,9 @@ public sealed class VoicevoxService : McpServiceBase, IGenerateVoiceService, IDi
                 out _,
                 out var wav);
 
-            EnsureOk(result, "éŸ³å£°åˆæˆå¤±æ•—");
+            EnsureOk(result, "‰¹º‡¬¸”s");
 
-            McpLogger?.Debug($"{LogPrefix} SynthesizeAsync: éŸ³å£°åˆæˆå®Œäº†: ã‚µã‚¤ã‚º={wav!.Length}ãƒã‚¤ãƒˆ");
+            McpLogger?.Debug($"{LogPrefix} SynthesizeAsync: ‰¹º‡¬Š®—¹: ƒTƒCƒY={wav!.Length}ƒoƒCƒg");
             return wav!;
         }
         finally
@@ -211,35 +211,48 @@ public sealed class VoicevoxService : McpServiceBase, IGenerateVoiceService, IDi
     }
 
     private async Task<string> SynthesizeToFileAsync(
-        string text,
+        IGenerateVoiceRequest request,
         string outputDir,
-        string outputWavFileName,
+        VoicevoxGenerationOptions? voicevoxOptions,
         uint? styleId = null,
         CancellationToken cancellationToken = default)
     {
-        McpLogger?.Debug($"{LogPrefix} SynthesizeToFileAsync: é–‹å§‹: text={text.Length}æ–‡å­—, outputWavFileName={outputWavFileName}");
+        var text = request.Text;
+        var outputWavFileName = request.OutputWavFileName;
+
+        McpLogger?.Debug($"{LogPrefix} SynthesizeToFileAsync: ŠJn: text={text.Length}•¶š, outputWavFileName={outputWavFileName}");
 
         if (string.IsNullOrWhiteSpace(outputWavFileName))
         {
             var ex = new ArgumentException(
                 "OutputWavFileName must be specified",
                 nameof(outputWavFileName));
-            McpLogger?.Critical($"{LogPrefix} SynthesizeToFileAsync: å‡ºåŠ›ãƒ•ã‚¡ã‚¤ãƒ«åãŒæŒ‡å®šã•ã‚Œã¦ã„ã¾ã›ã‚“", ex);
+            McpLogger?.Critical($"{LogPrefix} SynthesizeToFileAsync: o—Íƒtƒ@ƒCƒ‹–¼‚ªw’è‚³‚ê‚Ä‚¢‚Ü‚¹‚ñ", ex);
             throw ex;
         }
 
         var wav = await SynthesizeAsync(text, styleId, cancellationToken);
 
         var outputWavPath = Path.Combine(outputDir, outputWavFileName);
-        McpLogger?.Debug($"{LogPrefix} SynthesizeToFileAsync: ãƒ•ã‚¡ã‚¤ãƒ«æ›¸ãè¾¼ã¿ä¸­: {outputWavPath}");
+        McpLogger?.Debug($"{LogPrefix} SynthesizeToFileAsync: ƒtƒ@ƒCƒ‹‘‚«‚İ’†: {outputWavPath}");
 
         await File.WriteAllBytesAsync(outputWavPath, wav, cancellationToken);
 
-        McpLogger?.Debug($"{LogPrefix} SynthesizeToFileAsync: å®Œäº†: {outputWavPath}");
+        // ƒeƒLƒXƒg/ƒƒ^ƒf[ƒ^ƒtƒ@ƒCƒ‹‚Ì•Û‘¶
+        var textFileSaveMode = voicevoxOptions?.TextFileSaveMode ?? TextFileSaveMode.TextOnly;
+        await SaveTextFileAsync(
+            text,
+            outputDir,
+            outputWavFileName,
+            textFileSaveMode,
+            voicevoxOptions,
+            cancellationToken);
+
+        McpLogger?.Debug($"{LogPrefix} SynthesizeToFileAsync: Š®—¹: {outputWavPath}");
         return outputWavPath;
     }
 
-    private void EnsureOk(ResultCode result, string errorContext = "å‡¦ç†å¤±æ•—")
+    private void EnsureOk(ResultCode result, string errorContext = "ˆ—¸”s")
     {
         if (result != ResultCode.RESULT_OK)
         {
@@ -266,7 +279,7 @@ public sealed class VoicevoxService : McpServiceBase, IGenerateVoiceService, IDi
         {
             var ex = new DirectoryNotFoundException(
                 $"pyopenjtalk directory not found: {baseDir}");
-            McpLogger?.Critical($"{LogPrefix} ResolveOpenJTalkDictPath: pyopenjtalk ãƒ‡ã‚£ãƒ¬ã‚¯ãƒˆãƒªãŒè¦‹ã¤ã‹ã‚Šã¾ã›ã‚“: {baseDir}", ex);
+            McpLogger?.Critical($"{LogPrefix} ResolveOpenJTalkDictPath: pyopenjtalk ƒfƒBƒŒƒNƒgƒŠ‚ªŒ©‚Â‚©‚è‚Ü‚¹‚ñ: {baseDir}", ex);
             throw ex;
         }
 
@@ -276,31 +289,82 @@ public sealed class VoicevoxService : McpServiceBase, IGenerateVoiceService, IDi
             SearchOption.TopDirectoryOnly
         ).ToList();
 
-        McpLogger?.Debug($"{LogPrefix} ResolveOpenJTalkDictPath: æ¤œå‡ºã•ã‚ŒãŸè¾æ›¸ãƒ‡ã‚£ãƒ¬ã‚¯ãƒˆãƒªæ•°={dictDirs.Count}");
+        McpLogger?.Debug($"{LogPrefix} ResolveOpenJTalkDictPath: ŒŸo‚³‚ê‚½«‘ƒfƒBƒŒƒNƒgƒŠ”={dictDirs.Count}");
 
         if (dictDirs.Count == 0)
         {
             var ex = new DirectoryNotFoundException(
                 $"open_jtalk dictionary not found under: {baseDir}");
-            McpLogger?.Critical($"{LogPrefix} ResolveOpenJTalkDictPath: open_jtalk è¾æ›¸ãŒè¦‹ã¤ã‹ã‚Šã¾ã›ã‚“: {baseDir}", ex);
+            McpLogger?.Critical($"{LogPrefix} ResolveOpenJTalkDictPath: open_jtalk «‘‚ªŒ©‚Â‚©‚è‚Ü‚¹‚ñ: {baseDir}", ex);
             throw ex;
         }
 
         if (dictDirs.Count > 1)
         {
-            McpLogger?.Warn($"{LogPrefix} ResolveOpenJTalkDictPath: è¤‡æ•°ã®è¾æ›¸ãƒ‡ã‚£ãƒ¬ã‚¯ãƒˆãƒªãŒè¦‹ã¤ã‹ã‚Šã¾ã—ãŸã€‚æœ€åˆã®ã‚‚ã®ã‚’ä½¿ç”¨ã—ã¾ã™ã€‚");
+            McpLogger?.Warn($"{LogPrefix} ResolveOpenJTalkDictPath: •¡”‚Ì«‘ƒfƒBƒŒƒNƒgƒŠ‚ªŒ©‚Â‚©‚è‚Ü‚µ‚½BÅ‰‚Ì‚à‚Ì‚ğg—p‚µ‚Ü‚·B");
         }
 
         var selectedPath = dictDirs[0];
-        McpLogger?.Debug($"{LogPrefix} ResolveOpenJTalkDictPath: é¸æŠã•ã‚ŒãŸè¾æ›¸ãƒ‘ã‚¹={selectedPath}");
+        McpLogger?.Debug($"{LogPrefix} ResolveOpenJTalkDictPath: ‘I‘ğ‚³‚ê‚½«‘ƒpƒX={selectedPath}");
         return selectedPath;
     }
 
     public void Dispose()
     {
-        McpLogger?.Debug($"{LogPrefix} Dispose: ãƒªã‚½ãƒ¼ã‚¹è§£æ”¾ä¸­...");
+        McpLogger?.Debug($"{LogPrefix} Dispose: ƒŠƒ\[ƒX‰ğ•ú’†...");
         _synthesizer.Dispose();
         _gate.Dispose();
-        McpLogger?.Debug($"{LogPrefix} Dispose: ãƒªã‚½ãƒ¼ã‚¹è§£æ”¾å®Œäº†");
+        McpLogger?.Debug($"{LogPrefix} Dispose: ƒŠƒ\[ƒX‰ğ•úŠ®—¹");
+    }
+
+    private async Task SaveTextFileAsync(
+        string text,
+        string outputDir,
+        string outputWavFileName,
+        TextFileSaveMode saveMode,
+        VoicevoxGenerationOptions? options,
+        CancellationToken cancellationToken)
+    {
+        if (saveMode == TextFileSaveMode.None)
+        {
+            McpLogger?.Debug($"{LogPrefix} SaveTextFileAsync: ƒeƒLƒXƒgƒtƒ@ƒCƒ‹•Û‘¶‚È‚µ (Mode: None)");
+            return;
+        }
+
+        var baseFileName = Path.GetFileNameWithoutExtension(outputWavFileName);
+
+        if (saveMode == TextFileSaveMode.TextOnly)
+        {
+            var textFilePath = Path.Combine(outputDir, $"{baseFileName}.txt");
+            McpLogger?.Debug($"{LogPrefix} SaveTextFileAsync: ƒeƒLƒXƒgƒtƒ@ƒCƒ‹•Û‘¶’†: {textFilePath}");
+
+            await File.WriteAllTextAsync(textFilePath, text, System.Text.Encoding.UTF8, cancellationToken);
+
+            McpLogger?.Debug($"{LogPrefix} SaveTextFileAsync: ƒeƒLƒXƒgƒtƒ@ƒCƒ‹•Û‘¶Š®—¹");
+        }
+        else if (saveMode == TextFileSaveMode.WithMetadata)
+        {
+            var jsonFilePath = Path.Combine(outputDir, $"{baseFileName}.json");
+            McpLogger?.Debug($"{LogPrefix} SaveTextFileAsync: ƒƒ^ƒf[ƒ^ƒtƒ@ƒCƒ‹•Û‘¶’†: {jsonFilePath}");
+
+            var metadata = new VoicevoxMetadata
+            {
+                Text = text,
+                GeneratedAt = DateTime.UtcNow.ToString("O"),
+                OutputFileName = outputWavFileName,
+                Options = options
+            };
+
+            var jsonOptions = new JsonSerializerOptions
+            {
+                WriteIndented = true,
+                Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping
+            };
+
+            var json = JsonSerializer.Serialize(metadata, jsonOptions);
+            await File.WriteAllTextAsync(jsonFilePath, json, System.Text.Encoding.UTF8, cancellationToken);
+
+            McpLogger?.Debug($"{LogPrefix} SaveTextFileAsync: ƒƒ^ƒf[ƒ^ƒtƒ@ƒCƒ‹•Û‘¶Š®—¹");
+        }
     }
 }
