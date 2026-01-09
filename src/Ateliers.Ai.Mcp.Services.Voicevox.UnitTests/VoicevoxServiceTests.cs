@@ -1,312 +1,266 @@
 ﻿using Ateliers.Ai.Mcp.Logging;
 using Ateliers.Ai.Mcp.Services.GenericModels;
 using Ateliers.Ai.Mcp.Services.Voicevox;
+using Ateliers.Voice.Engines.VoicevoxTools;
+using Moq;
 using Xunit;
 
 namespace Ateliers.Ai.Mcp.Services.Voicevox.UnitTests;
 
+/// <summary>
+/// VoicevoxService の単体テスト（モックベース）
+/// 実際のファイル生成は行わず、ロジックのみをテスト
+/// </summary>
 public sealed class VoicevoxServiceTests
 {
-    static VoicevoxServiceTests()
-    {
-        var path = @"C:\Program Files\VOICEVOX\vv-engine";
-        if (Directory.Exists(path))
-        {
-            NativeLibraryPath.Use(path);
-        }
-    }
-
-    // ★ 環境に合わせて書き換えてください
-    private const string ResourcePath =
-        @"C:\Program Files\VOICEVOX\vv-engine";
-
-    [Fact]
-    [Trait("Category", "Integration")]
-    public async Task GenerateVoiceFileAsync_WavFileIsGenerated()
+    [Fact(DisplayName = "音声ファイル生成時に正しいパラメーターでジェネレーターが呼び出されることを確認")]
+    public async Task GenerateVoiceFileAsync_CallsGeneratorWithCorrectParameters()
     {
         // Arrange
+        var mockLogger = new Mock<IMcpLogger>();
+        var mockGenerator = new Mock<IVoicevoxVoiceGenerator>();
+        
         var options = new VoicevoxServiceOptions
         {
-            ResourcePath = ResourcePath,
+            ResourcePath = "/dummy/path",
             VoiceModelNames = new[] { "0.vmm" },
             VoicevoxOutputDirectoryName = "voicevox"
         };
-        var loggger = new InMemoryMcpLogger(new McpLoggerOptions());
 
-        using var service = new VoicevoxService(loggger, options);
-        var request = new GenerateVoiceRequest
-        {
-            Text = "これはテスト音声です。",
-            OutputWavFileName = "test_output.wav",
-            Options = new VoicevoxGenerationOptions
+        var expectedOutputPath = "/output/test.wav";
+        mockGenerator
+            .Setup(g => g.GenerateVoiceFileAsync(
+                It.IsAny<VoicevoxGenerateRequest>(),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new VoicevoxGenerateResult
             {
-                StyleId = 1
-            }
-        };
+                OutputWavPath = expectedOutputPath,
+                Elapsed = TimeSpan.FromSeconds(1)
+            });
 
-        // Act
-        var resultPath = await service.GenerateVoiceFileAsync(request);
+        var service = new VoicevoxService(mockLogger.Object, options, mockGenerator.Object);
 
-        // Assert
-        Assert.True(File.Exists(resultPath));
-
-        var fileInfo = new FileInfo(resultPath);
-        Assert.True(fileInfo.Length > 0);
-
-        // Optional: wav ヘッダ確認（超軽量チェック）
-        using var fs = File.OpenRead(resultPath);
-        var header = new byte[4];
-        await fs.ReadAsync(header, 0, 4);
-
-        Assert.Equal("RIFF", System.Text.Encoding.ASCII.GetString(header));
-
-        // テキストファイルが生成されていることを確認（デフォルト: TextOnly）
-        var textFilePath = Path.Combine(Path.GetDirectoryName(resultPath)!, "test_output.txt");
-        Assert.True(File.Exists(textFilePath));
-
-        var savedText = await File.ReadAllTextAsync(textFilePath);
-        Assert.Equal("これはテスト音声です。", savedText);
-    }
-
-    [Fact]
-    [Trait("Category", "Integration")]
-    public async Task GenerateVoiceFileAsync_WithMetadata_JsonFileIsGenerated()
-    {
-        // Arrange
-        var options = new VoicevoxServiceOptions
-        {
-            ResourcePath = ResourcePath,
-            VoiceModelNames = new[] { "0.vmm" },
-            VoicevoxOutputDirectoryName = "voicevox"
-        };
-        var loggger = new InMemoryMcpLogger(new McpLoggerOptions());
-
-        using var service = new VoicevoxService(loggger, options);
         var request = new GenerateVoiceRequest
         {
-            Text = "メタデータ付きテスト音声です。",
-            OutputWavFileName = "test_metadata.wav",
-            Options = new VoicevoxGenerationOptions
-            {
-                StyleId = 2,
-                SpeedScale = 1.2f,
-                TextFileSaveMode = TextFileSaveMode.WithMetadata
-            }
-        };
-
-        // Act
-        var resultPath = await service.GenerateVoiceFileAsync(request);
-
-        // Assert
-        Assert.True(File.Exists(resultPath));
-
-        // JSON ファイルが生成されていることを確認
-        var jsonFilePath = Path.Combine(Path.GetDirectoryName(resultPath)!, "test_metadata.json");
-        Assert.True(File.Exists(jsonFilePath));
-
-        var json = await File.ReadAllTextAsync(jsonFilePath);
-        Assert.Contains("メタデータ付きテスト音声です。", json);
-        Assert.Contains("\"service\": \"Voicevox\"", json);
-        Assert.Contains("\"styleId\": 2", json);
-        Assert.Contains("\"speedScale\": 1.2", json);
-    }
-
-    [Fact]
-    [Trait("Category", "Integration")]
-    public async Task GenerateVoiceFileAsync_WithNone_NoTextFileIsGenerated()
-    {
-        // Arrange
-        var options = new VoicevoxServiceOptions
-        {
-            ResourcePath = ResourcePath,
-            VoiceModelNames = new[] { "0.vmm" },
-            VoicevoxOutputDirectoryName = "voicevox"
-        };
-        var loggger = new InMemoryMcpLogger(new McpLoggerOptions());
-
-        using var service = new VoicevoxService(loggger, options);
-        var request = new GenerateVoiceRequest
-        {
-            Text = "テキストファイルなしのテスト音声です。",
-            OutputWavFileName = "test_no_text.wav",
-            Options = new VoicevoxGenerationOptions
+            Text = "テスト音声です。",
+            OutputWavFileName = "test.wav",
+            Options = new VoicevoxMcpGenerationOptions
             {
                 StyleId = 1,
-                TextFileSaveMode = TextFileSaveMode.None
+                SpeedScale = 1.2f
             }
         };
 
         // Act
-        var resultPath = await service.GenerateVoiceFileAsync(request);
+        var result = await service.GenerateVoiceFileAsync(request);
 
         // Assert
-        Assert.True(File.Exists(resultPath));
-
-        // テキストファイルが生成されていないことを確認
-        var textFilePath = Path.Combine(Path.GetDirectoryName(resultPath)!, "test_no_text.txt");
-        Assert.False(File.Exists(textFilePath));
-
-        var jsonFilePath = Path.Combine(Path.GetDirectoryName(resultPath)!, "test_no_text.json");
-        Assert.False(File.Exists(jsonFilePath));
+        Assert.Equal(expectedOutputPath, result);
+        
+        mockGenerator.Verify(
+            g => g.GenerateVoiceFileAsync(
+                It.Is<VoicevoxGenerateRequest>(r =>
+                    r.Text == "テスト音声です。" &&
+                    r.OutputWavFileName == "test.wav" &&
+                    r.Options!.StyleId == 1 &&
+                    r.Options.SpeedScale == 1.2f),
+                It.IsAny<CancellationToken>()),
+            Times.Once);
     }
 
-    [Fact]
-    [Trait("Category", "Integration")]
-    public async Task GenerateVoiceFilesAsync_MultipleWavFilesAreGenerated()
+    [Fact(DisplayName = "オプションがnullの場合にジェネレーターがnullオプションで呼び出されることを確認")]
+    public async Task GenerateVoiceFileAsync_WithNullOptions_CallsGeneratorWithNullOptions()
     {
         // Arrange
+        var mockLogger = new Mock<IMcpLogger>();
+        var mockGenerator = new Mock<IVoicevoxVoiceGenerator>();
+        
         var options = new VoicevoxServiceOptions
         {
-            ResourcePath = ResourcePath,
+            ResourcePath = "/dummy/path",
             VoiceModelNames = new[] { "0.vmm" },
             VoicevoxOutputDirectoryName = "voicevox"
         };
-        var loggger = new InMemoryMcpLogger(new McpLoggerOptions());
 
-        using var service = new VoicevoxService(loggger, options);
+        mockGenerator
+            .Setup(g => g.GenerateVoiceFileAsync(
+                It.IsAny<VoicevoxGenerateRequest>(),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new VoicevoxGenerateResult
+            {
+                OutputWavPath = "/output/test.wav",
+                Elapsed = TimeSpan.FromSeconds(1)
+            });
+
+        var service = new VoicevoxService(mockLogger.Object, options, mockGenerator.Object);
+
+        var request = new GenerateVoiceRequest
+        {
+            Text = "テスト音声です。",
+            OutputWavFileName = "test.wav",
+            Options = null
+        };
+
+        // Act
+        await service.GenerateVoiceFileAsync(request);
+
+        // Assert
+        mockGenerator.Verify(
+            g => g.GenerateVoiceFileAsync(
+                It.Is<VoicevoxGenerateRequest>(r => r.Options == null),
+                It.IsAny<CancellationToken>()),
+            Times.Once);
+    }
+
+    [Fact(DisplayName = "複数のリクエストでジェネレーターが呼び出されることを確認")]
+    public async Task GenerateVoiceFilesAsync_CallsGeneratorWithMultipleRequests()
+    {
+        // Arrange
+        var mockLogger = new Mock<IMcpLogger>();
+        var mockGenerator = new Mock<IVoicevoxVoiceGenerator>();
+        
+        var options = new VoicevoxServiceOptions
+        {
+            ResourcePath = "/dummy/path",
+            VoiceModelNames = new[] { "0.vmm" },
+            VoicevoxOutputDirectoryName = "voicevox"
+        };
+
+        var expectedResults = new List<VoicevoxGenerateResult>
+        {
+            new() { OutputWavPath = "/output/test1.wav", Elapsed = TimeSpan.FromSeconds(1) },
+            new() { OutputWavPath = "/output/test2.wav", Elapsed = TimeSpan.FromSeconds(1) },
+            new() { OutputWavPath = "/output/test3.wav", Elapsed = TimeSpan.FromSeconds(1) }
+        };
+
+        mockGenerator
+            .Setup(g => g.GenerateVoiceFilesAsync(
+                It.IsAny<IEnumerable<VoicevoxGenerateRequest>>(),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(expectedResults);
+
+        var service = new VoicevoxService(mockLogger.Object, options, mockGenerator.Object);
+
         var requests = new[]
         {
             new GenerateVoiceRequest
             {
                 Text = "最初の音声です。",
-                OutputWavFileName = "multi_01.wav",
-                Options = new VoicevoxGenerationOptions
-                {
-                    StyleId = 1
-                }
+                OutputWavFileName = "test1.wav",
+                Options = new VoicevoxMcpGenerationOptions { StyleId = 1 }
             },
             new GenerateVoiceRequest
             {
                 Text = "2番目の音声です。",
-                OutputWavFileName = "multi_02.wav",
-                Options = new VoicevoxGenerationOptions
-                {
-                    StyleId = 1
-                }
+                OutputWavFileName = "test2.wav",
+                Options = new VoicevoxMcpGenerationOptions { StyleId = 2 }
             },
             new GenerateVoiceRequest
             {
                 Text = "3番目の音声です。",
-                OutputWavFileName = "multi_03.wav",
-                Options = new VoicevoxGenerationOptions
-                {
-                    StyleId = 1
-                }
+                OutputWavFileName = "test3.wav",
+                Options = new VoicevoxMcpGenerationOptions { StyleId = 1 }
             }
         };
 
         // Act
-        var resultPaths = await service.GenerateVoiceFilesAsync(requests);
+        var results = await service.GenerateVoiceFilesAsync(requests);
 
         // Assert
-        Assert.Equal(3, resultPaths.Count);
+        Assert.Equal(3, results.Count);
+        Assert.Equal("/output/test1.wav", results[0]);
+        Assert.Equal("/output/test2.wav", results[1]);
+        Assert.Equal("/output/test3.wav", results[2]);
 
-        // すべての WAV ファイルが生成されていることを確認
-        foreach (var resultPath in resultPaths)
-        {
-            Assert.True(File.Exists(resultPath));
-            
-            var fileInfo = new FileInfo(resultPath);
-            Assert.True(fileInfo.Length > 0);
-        }
-
-        // すべてのテキストファイルが生成されていることを確認（デフォルト: TextOnly）
-        var expectedTexts = new[]
-        {
-            ("multi_01.txt", "最初の音声です。"),
-            ("multi_02.txt", "2番目の音声です。"),
-            ("multi_03.txt", "3番目の音声です。")
-        };
-
-        var outputDir = Path.GetDirectoryName(resultPaths[0])!;
-        foreach (var (fileName, expectedText) in expectedTexts)
-        {
-            var textFilePath = Path.Combine(outputDir, fileName);
-            Assert.True(File.Exists(textFilePath));
-
-            var savedText = await File.ReadAllTextAsync(textFilePath);
-            Assert.Equal(expectedText, savedText);
-        }
+        mockGenerator.Verify(
+            g => g.GenerateVoiceFilesAsync(
+                It.Is<IEnumerable<VoicevoxGenerateRequest>>(reqs => reqs.Count() == 3),
+                It.IsAny<CancellationToken>()),
+            Times.Once);
     }
 
-    [Fact]
-    [Trait("Category", "Integration")]
-    public async Task GenerateVoiceFilesAsync_WithDifferentModes_FilesAreGeneratedCorrectly()
+    [Fact(DisplayName = "オプション変換時にすべてのプロパティがマッピングされることを確認")]
+    public async Task GenerateVoiceFileAsync_OptionsConversion_AllPropertiesAreMapped()
     {
         // Arrange
+        var mockLogger = new Mock<IMcpLogger>();
+        var mockGenerator = new Mock<IVoicevoxVoiceGenerator>();
+        
         var options = new VoicevoxServiceOptions
         {
-            ResourcePath = ResourcePath,
+            ResourcePath = "/dummy/path",
             VoiceModelNames = new[] { "0.vmm" },
             VoicevoxOutputDirectoryName = "voicevox"
         };
-        var loggger = new InMemoryMcpLogger(new McpLoggerOptions());
 
-        using var service = new VoicevoxService(loggger, options);
-        var requests = new[]
+        mockGenerator
+            .Setup(g => g.GenerateVoiceFileAsync(
+                It.IsAny<VoicevoxGenerateRequest>(),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new VoicevoxGenerateResult
+            {
+                OutputWavPath = "/output/test.wav",
+                Elapsed = TimeSpan.FromSeconds(1)
+            });
+
+        var service = new VoicevoxService(mockLogger.Object, options, mockGenerator.Object);
+
+        var request = new GenerateVoiceRequest
         {
-            new GenerateVoiceRequest
+            Text = "完全なオプションテストです。",
+            OutputWavFileName = "full_options.wav",
+            Options = new VoicevoxMcpGenerationOptions
             {
-                Text = "テキストのみ保存。",
-                OutputWavFileName = "mode_text.wav",
-                Options = new VoicevoxGenerationOptions
-                {
-                    StyleId = 1,
-                    TextFileSaveMode = TextFileSaveMode.TextOnly
-                }
-            },
-            new GenerateVoiceRequest
-            {
-                Text = "メタデータ付き保存。",
-                OutputWavFileName = "mode_metadata.wav",
-                Options = new VoicevoxGenerationOptions
-                {
-                    StyleId = 2,
-                    SpeedScale = 1.1f,
-                    TextFileSaveMode = TextFileSaveMode.WithMetadata
-                }
-            },
-            new GenerateVoiceRequest
-            {
-                Text = "保存なし。",
-                OutputWavFileName = "mode_none.wav",
-                Options = new VoicevoxGenerationOptions
-                {
-                    StyleId = 1,
-                    TextFileSaveMode = TextFileSaveMode.None
-                }
+                StyleId = 5,
+                SpeedScale = 1.5f,
+                PitchScale = 0.5f,
+                IntonationScale = 1.2f,
+                VolumeScale = 0.8f,
+                PrePhonemeLength = 0.1f,
+                PostPhonemeLength = 0.2f,
+                TextFileSaveMode = TextFileSaveMode.WithMetadata
             }
         };
 
         // Act
-        var resultPaths = await service.GenerateVoiceFilesAsync(requests);
+        await service.GenerateVoiceFileAsync(request);
 
         // Assert
-        Assert.Equal(3, resultPaths.Count);
+        mockGenerator.Verify(
+            g => g.GenerateVoiceFileAsync(
+                It.Is<VoicevoxGenerateRequest>(r =>
+                    r.Options!.StyleId == 5 &&
+                    r.Options.SpeedScale == 1.5f &&
+                    r.Options.PitchScale == 0.5f &&
+                    r.Options.IntonationScale == 1.2f &&
+                    r.Options.VolumeScale == 0.8f &&
+                    r.Options.PrePhonemeLength == 0.1f &&
+                    r.Options.PostPhonemeLength == 0.2f &&
+                    r.Options.TextFileSaveMode == Voice.Engines.TextFileSaveMode.WithMetadata),
+                It.IsAny<CancellationToken>()),
+            Times.Once);
+    }
 
-        var outputDir = Path.GetDirectoryName(resultPaths[0])!;
+    [Fact(DisplayName = "Dispose時にジェネレーターのDisposeが呼び出されることを確認")]
+    public void Dispose_CallsGeneratorDispose()
+    {
+        // Arrange
+        var mockLogger = new Mock<IMcpLogger>();
+        var mockGenerator = new Mock<IVoicevoxVoiceGenerator>();
+        
+        var options = new VoicevoxServiceOptions
+        {
+            ResourcePath = "/dummy/path",
+            VoiceModelNames = new[] { "0.vmm" },
+            VoicevoxOutputDirectoryName = "voicevox"
+        };
 
-        // TextOnly: .txt ファイルのみ存在
-        var textOnlyTxtPath = Path.Combine(outputDir, "mode_text.txt");
-        Assert.True(File.Exists(textOnlyTxtPath));
-        var textOnlyJsonPath = Path.Combine(outputDir, "mode_text.json");
-        Assert.False(File.Exists(textOnlyJsonPath));
+        var service = new VoicevoxService(mockLogger.Object, options, mockGenerator.Object);
 
-        // WithMetadata: .json ファイルのみ存在
-        var metadataJsonPath = Path.Combine(outputDir, "mode_metadata.json");
-        Assert.True(File.Exists(metadataJsonPath));
-        var metadataTxtPath = Path.Combine(outputDir, "mode_metadata.txt");
-        Assert.False(File.Exists(metadataTxtPath));
+        // Act
+        service.Dispose();
 
-        var json = await File.ReadAllTextAsync(metadataJsonPath);
-        Assert.Contains("メタデータ付き保存。", json);
-        Assert.Contains("\"styleId\": 2", json);
-        Assert.Contains("\"speedScale\": 1.1", json);
-
-        // None: テキストファイルなし
-        var noneTxtPath = Path.Combine(outputDir, "mode_none.txt");
-        Assert.False(File.Exists(noneTxtPath));
-        var noneJsonPath = Path.Combine(outputDir, "mode_none.json");
-        Assert.False(File.Exists(noneJsonPath));
+        // Assert
+        mockGenerator.Verify(g => g.Dispose(), Times.Once);
     }
 }

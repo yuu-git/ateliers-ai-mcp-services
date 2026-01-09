@@ -1,56 +1,56 @@
-using System.Text.Json.Serialization;
+ï»¿using System.Text.Json.Serialization;
 
 namespace Ateliers.Ai.Mcp.Services.Voicevox;
 
 /// <summary>
-/// Voicevox ‰¹º¶¬‚ÌƒIƒvƒVƒ‡ƒ“İ’è
+/// Voicevox MCP éŸ³å£°ç”Ÿæˆã®ã‚ªãƒ—ã‚·ãƒ§ãƒ³è¨­å®š
 /// </summary>
-public class VoicevoxGenerationOptions : IVoiceGenerationOptions
+public class VoicevoxMcpGenerationOptions : IVoiceGenerationOptions
 {
     /// <summary>
-    /// ƒXƒ^ƒCƒ‹IDi˜bÒEŠ´î‚Ì‘g‚İ‡‚í‚¹j
+    /// ã‚¹ã‚¿ã‚¤ãƒ«IDï¼ˆè©±è€…ãƒ»æ„Ÿæƒ…ã®çµ„ã¿åˆã‚ã›ï¼‰
     /// </summary>
     [JsonPropertyName("styleId")]
     public uint? StyleId { get; init; }
 
     /// <summary>
-    /// ˜b‘¬ƒXƒP[ƒ‹iƒfƒtƒHƒ‹ƒg: 1.0j
+    /// è©±é€Ÿã‚¹ã‚±ãƒ¼ãƒ«ï¼ˆãƒ‡ãƒ•ã‚©ãƒ«ãƒˆ: 1.0ï¼‰
     /// </summary>
     [JsonPropertyName("speedScale")]
     public float? SpeedScale { get; init; }
 
     /// <summary>
-    /// ƒsƒbƒ`ƒXƒP[ƒ‹iƒfƒtƒHƒ‹ƒg: 0.0j
+    /// ãƒ”ãƒƒãƒã‚¹ã‚±ãƒ¼ãƒ«ï¼ˆãƒ‡ãƒ•ã‚©ãƒ«ãƒˆ: 0.0ï¼‰
     /// </summary>
     [JsonPropertyName("pitchScale")]
     public float? PitchScale { get; init; }
 
     /// <summary>
-    /// —}—gƒXƒP[ƒ‹iƒfƒtƒHƒ‹ƒg: 1.0j
+    /// æŠ‘æšã‚¹ã‚±ãƒ¼ãƒ«ï¼ˆãƒ‡ãƒ•ã‚©ãƒ«ãƒˆ: 1.0ï¼‰
     /// </summary>
     [JsonPropertyName("intonationScale")]
     public float? IntonationScale { get; init; }
 
     /// <summary>
-    /// ‰¹—ÊƒXƒP[ƒ‹iƒfƒtƒHƒ‹ƒg: 1.0j
+    /// éŸ³é‡ã‚¹ã‚±ãƒ¼ãƒ«ï¼ˆãƒ‡ãƒ•ã‚©ãƒ«ãƒˆ: 1.0ï¼‰
     /// </summary>
     [JsonPropertyName("volumeScale")]
     public float? VolumeScale { get; init; }
 
     /// <summary>
-    /// ŠJn–³‰¹ŠÔi•bj
+    /// é–‹å§‹ç„¡éŸ³æ™‚é–“ï¼ˆç§’ï¼‰
     /// </summary>
     [JsonPropertyName("prePhonemeLength")]
     public float? PrePhonemeLength { get; init; }
 
     /// <summary>
-    /// I—¹–³‰¹ŠÔi•bj
+    /// çµ‚äº†ç„¡éŸ³æ™‚é–“ï¼ˆç§’ï¼‰
     /// </summary>
     [JsonPropertyName("postPhonemeLength")]
     public float? PostPhonemeLength { get; init; }
 
     /// <summary>
-    /// ƒeƒLƒXƒgƒtƒ@ƒCƒ‹‚Ì•Û‘¶ƒ‚[ƒhiƒfƒtƒHƒ‹ƒg: TextOnlyj
+    /// ãƒ†ã‚­ã‚¹ãƒˆãƒ•ã‚¡ã‚¤ãƒ«ã®ä¿å­˜ãƒ¢ãƒ¼ãƒ‰ï¼ˆãƒ‡ãƒ•ã‚©ãƒ«ãƒˆ: TextOnlyï¼‰
     /// </summary>
     [JsonPropertyName("textFileSaveMode")]
     public TextFileSaveMode TextFileSaveMode { get; init; } = TextFileSaveMode.TextOnly;

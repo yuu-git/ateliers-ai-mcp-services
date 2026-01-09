@@ -8,12 +8,12 @@
 
     <!-- NuGet パッケージ情報 -->
     <Version>0.3.1-alpha.1</Version>
-    <PackageId>Ateliers.Ai.Mcp.Services.Voicevox</PackageId>
+    <PackageId>Ateliers.Ai.Mcp.Services.VoicePeak</PackageId>
     <Authors>ateliers</Authors>
     <Company>ateliers.dev</Company>
     <Product>Ateliers AI MCP</Product>
-    <Description>VOICEVOX エンジンを使用したローカル音声合成サービス (Ateliers.Voice.Engines.VoicevoxTools のラッパー)</Description>
-    <PackageTags>mcp;ai;voicevox;tts;speech;voice;synthesis;audio;wav;local;</PackageTags>
+    <Description>VOICEPEAK エンジンを使用したローカル音声合成サービス (Ateliers.Voice.Engines.VoicePeakTools のラッパー)</Description>
+    <PackageTags>mcp;ai;voicepeak;tts;speech;voice;synthesis;audio;wav;local;</PackageTags>
     <PackageProjectUrl>https://github.com/yuu-git/ateliers-ai-mcp-services</PackageProjectUrl>
     <RepositoryUrl>https://github.com/yuu-git/ateliers-ai-mcp-services</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
@@ -33,17 +33,15 @@
 
   <!-- テストからのinternal参照を許可 -->
   <ItemGroup>
-    <InternalsVisibleTo Include="Ateliers.Ai.Mcp.Services.Voicevox.UnitTests" />
+    <InternalsVisibleTo Include="Ateliers.Ai.Mcp.Services.VoicePeak.UnitTests" />
   </ItemGroup>
 
   <!-- README を NuGet パッケージに含める -->
   <ItemGroup>
     <None Include=".\README.md" Pack="true" PackagePath="\" />
   </ItemGroup>
-
   <ItemGroup>
-    <PackageReference Include="Ateliers.Voice.Engines.VoicevoxTools" Version="0.1.0-alpha.1" />
-    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.1" />
+    <PackageReference Include="Ateliers.Voice.Engines.VoicePeakTools" Version="0.1.0-alpha.1" />
   </ItemGroup>
 
   <ItemGroup>

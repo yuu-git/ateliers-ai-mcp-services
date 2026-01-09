@@ -19,7 +19,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Ateliers.Ai.Mcp.Services.Voicevox\Ateliers.Ai.Mcp.Services.Voicevox.csproj" />
+    <ProjectReference Include="..\Ateliers.Ai.Mcp.Services.VoicePeak\Ateliers.Ai.Mcp.Services.VoicePeak.csproj" />
   </ItemGroup>
 
   <ItemGroup>
