@@ -37,7 +37,7 @@
   </ItemGroup>
   
   <ItemGroup>
-    <PackageReference Include="Notion.Net" Version="4.4.0" />
+    <PackageReference Include="Notion.Net" Version="5.0.0-preview-1.12.25.2025" />
   </ItemGroup>
 
   <ItemGroup>
