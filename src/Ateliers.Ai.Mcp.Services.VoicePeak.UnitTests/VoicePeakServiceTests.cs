@@ -422,4 +422,133 @@ public sealed class VoicePeakServiceTests
                 It.IsAny<CancellationToken>()),
             Times.Once);
     }
+
+    [Fact(DisplayName = "GetServiceKnowledgeContents: ナレッジコンテンツが存在しない場合にデフォルトメッセージを返すこと")]
+    public void GetServiceKnowledgeContents_WithNoKnowledge_ReturnsDefaultMessage()
+    {
+        // Arrange
+        var mockLogger = new Mock<IMcpLogger>();
+        var mockGenerator = new Mock<IVoicePeakVoiceGenerator>();
+        
+        var options = new VoicePeakServiceOptions
+        {
+            VoicePeakExecutablePath = @"C:\dummy\voicepeak.exe",
+            VoicePeakOutputDirectoryName = "voicepeak",
+            VoicePeakKnowledgeOptions = new List<VoicePeakGenerationKnowledgeOptions>()
+        };
+
+        var service = new VoicePeakService(mockLogger.Object, options, mockGenerator.Object);
+
+        // Act
+        var contents = service.GetServiceKnowledgeContents().ToList();
+
+        // Assert
+        Assert.Single(contents);
+        Assert.Contains("VOICEPEAK MCP ナレッジ", contents[0]);
+        Assert.Contains("現在、VOICEPEAK サービスにはナレッジコンテンツが設定されていません", contents[0]);
+        
+        mockLogger.Verify(
+            l => l.Warn(It.Is<string>(s => s.Contains("現在ナレッジコンテンツが存在しません"))),
+            Times.Once);
+    }
+
+    [Fact(DisplayName = "GetServiceKnowledgeContents: nullのナレッジオプションの場合にデフォルトメッセージを返すこと")]
+    public void GetServiceKnowledgeContents_WithNullKnowledge_ReturnsDefaultMessage()
+    {
+        // Arrange
+        var mockLogger = new Mock<IMcpLogger>();
+        var mockGenerator = new Mock<IVoicePeakVoiceGenerator>();
+        
+        var options = new VoicePeakServiceOptions
+        {
+            VoicePeakExecutablePath = @"C:\dummy\voicepeak.exe",
+            VoicePeakOutputDirectoryName = "voicepeak"
+        };
+
+        var service = new VoicePeakService(mockLogger.Object, options, mockGenerator.Object);
+
+        // Act
+        var contents = service.GetServiceKnowledgeContents().ToList();
+
+        // Assert
+        Assert.Single(contents);
+        Assert.Contains("VOICEPEAK MCP ナレッジ", contents[0]);
+        Assert.Contains("現在、VOICEPEAK サービスにはナレッジコンテンツが設定されていません", contents[0]);
+    }
+
+    [Fact(DisplayName = "GetServiceKnowledgeContents: ベースクラスがナレッジを返す場合にそれを使用すること")]
+    public void GetServiceKnowledgeContents_WithKnowledgeFromBase_ReturnsKnowledge()
+    {
+        // Arrange
+        var mockLogger = new Mock<IMcpLogger>();
+        var mockGenerator = new Mock<IVoicePeakVoiceGenerator>();
+        
+        var tempFile = Path.GetTempFileName();
+        File.WriteAllText(tempFile, "# テストナレッジ\n\nこれはテスト用のナレッジコンテンツです。");
+
+        try
+        {
+            var options = new VoicePeakServiceOptions
+            {
+                VoicePeakExecutablePath = @"C:\dummy\voicepeak.exe",
+                VoicePeakOutputDirectoryName = "voicepeak",
+                VoicePeakKnowledgeOptions = new List<VoicePeakGenerationKnowledgeOptions>
+                {
+                    new VoicePeakGenerationKnowledgeOptions
+                    {
+                        KnowledgeType = "LocalFile",
+                        KnowledgeSource = tempFile,
+                        DocumentType = "Markdown",
+                        GenerateHeader = false
+                    }
+                }
+            };
+
+            var service = new VoicePeakService(mockLogger.Object, options, mockGenerator.Object);
+
+            // Act
+            var contents = service.GetServiceKnowledgeContents().ToList();
+
+            // Assert
+            Assert.Single(contents);
+            Assert.Contains("テストナレッジ", contents[0]);
+            Assert.Contains("これはテスト用のナレッジコンテンツです", contents[0]);
+        }
+        finally
+        {
+            if (File.Exists(tempFile))
+            {
+                File.Delete(tempFile);
+            }
+        }
+    }
+
+    [Fact(DisplayName = "GetServiceKnowledgeContents: ベースクラスが空のコレクションを返す場合にデフォルトメッセージを返すこと")]
+    public void GetServiceKnowledgeContents_WithEmptyKnowledgeFromBase_ReturnsDefaultMessage()
+    {
+        // Arrange
+        var mockLogger = new Mock<IMcpLogger>();
+        var mockGenerator = new Mock<IVoicePeakVoiceGenerator>();
+        
+        var options = new VoicePeakServiceOptions
+        {
+            VoicePeakExecutablePath = @"C:\dummy\voicepeak.exe",
+            VoicePeakOutputDirectoryName = "voicepeak",
+            VoicePeakKnowledgeOptions = new List<VoicePeakGenerationKnowledgeOptions>()
+        };
+
+        var service = new VoicePeakService(mockLogger.Object, options, mockGenerator.Object);
+
+        // Act
+        var contents = service.GetServiceKnowledgeContents().ToList();
+
+        // Assert
+        Assert.Single(contents);
+        Assert.Contains("VOICEPEAK MCP ナレッジ", contents[0]);
+        Assert.Contains("現在、VOICEPEAK サービスにはナレッジコンテンツが設定されていません", contents[0]);
+        
+        mockLogger.Verify(
+            l => l.Warn(It.Is<string>(s => s.Contains("現在ナレッジコンテンツが存在しません"))),
+            Times.Once);
+    }
 }

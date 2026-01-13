@@ -6,6 +6,11 @@
 public abstract class McpServiceBase
 {
     /// <summary>
+    /// ログ接頭辞
+    /// </summary>
+    protected virtual string LogPrefix { get; init; } = $"{nameof(McpServiceBase)}: ";
+
+    /// <summary>
     /// MCPロガー
     /// </summary>
     protected IMcpLogger? McpLogger { get; }

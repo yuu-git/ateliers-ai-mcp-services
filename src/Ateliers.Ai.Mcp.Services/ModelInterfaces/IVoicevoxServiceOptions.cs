@@ -26,4 +26,9 @@ public interface IVoicevoxServiceOptions : IOutputDirectoryProvider
     /// Sub directory name for VOICEVOX outputs.
     /// </summary>
     string VoicevoxOutputDirectoryName { get; }
+
+    /// <summary>
+    /// VOICEVOX 用のコンテンツ生成ナレッジオプション群
+    /// </summary>
+    IList<VoicevoxGenerationKnowledgeOptions> VoicevoxKnowledgeOptions { get; }
 }

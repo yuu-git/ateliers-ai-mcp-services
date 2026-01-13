@@ -9,5 +9,7 @@ public sealed class VoicevoxServiceOptions : OutputDirectoryProvider, IVoicevoxS
     public IReadOnlyCollection<string>? VoiceModelNames { get; init; }
 
     public string VoicevoxOutputDirectoryName { get; init; } = "voicevox";
+
+    public IList<VoicevoxGenerationKnowledgeOptions> VoicevoxKnowledgeOptions { get; init; } = new List<VoicevoxGenerationKnowledgeOptions>();
 }
 

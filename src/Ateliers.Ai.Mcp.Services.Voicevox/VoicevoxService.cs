@@ -9,15 +9,16 @@ namespace Ateliers.Ai.Mcp.Services.Voicevox;
 /// <summary>
 /// VOICEVOX MCP サービス（Ateliers.Voice.Engines.VoicevoxTools のラッパー）
 /// </summary>
-public sealed class VoicevoxService : McpServiceBase, IGenerateVoiceService, IDisposable
+public sealed class VoicevoxService : McpContentGenerationServiceBase, IGenerateVoiceService, IDisposable
 {
+    protected override string LogPrefix { get; init; } = $"{nameof(VoicevoxService)}:";
+
     private readonly IVoicevoxServiceOptions _options;
     private readonly IVoicevoxVoiceGenerator _generator;
     private readonly ServiceProvider? _serviceProvider;
-    private const string LogPrefix = $"{nameof(VoicevoxService)}:";
 
     public VoicevoxService(IMcpLogger mcpLogger, IVoicevoxServiceOptions options)
-        : base(mcpLogger)
+        : base(mcpLogger, options.VoicevoxKnowledgeOptions)
     {
         McpLogger?.Info($"{LogPrefix} 初期化を開始");
 
@@ -66,7 +67,7 @@ public sealed class VoicevoxService : McpServiceBase, IGenerateVoiceService, IDi
     /// テスト用コンストラクタ（DI対応）
     /// </summary>
     internal VoicevoxService(IMcpLogger mcpLogger, IVoicevoxServiceOptions options, IVoicevoxVoiceGenerator generator)
-        : base(mcpLogger)
+        : base(mcpLogger, options.VoicevoxKnowledgeOptions)
     {
         _options = options ?? throw new ArgumentNullException(nameof(options));
         _generator = generator ?? throw new ArgumentNullException(nameof(generator));
@@ -82,6 +83,25 @@ public sealed class VoicevoxService : McpServiceBase, IGenerateVoiceService, IDi
         return
             "未実装：VoicevoxService では、現在コンテンツ生成ガイドは提供されていません。" +
             "将来的にナレーターの特徴や使用方法を説明するガイドが追加される予定です。";
+    }
+
+    /// <summary>
+    /// ナレッジコンテンツを取得します。
+    /// </summary>
+    /// <returns> ナレッジコンテンツの列挙 </returns>
+    public override IEnumerable<string> GetServiceKnowledgeContents()
+    {
+        var contents = base.GetServiceKnowledgeContents();
+        if (contents == null || !contents.Any())
+        {
+            McpLogger?.Warn($"{LogPrefix} Voicevox サービスは現在ナレッジコンテンツが存在しません。");
+            return new List<string>()
+            {
+                "# VOICEVOX MCP ナレッジ：" + Environment.NewLine + Environment.NewLine +
+                "現在、VOICEVOX サービスにはナレッジコンテンツが設定されていません。",
+            };
+        }
+        return contents;
     }
 
     public async Task<string> GenerateVoiceFileAsync(

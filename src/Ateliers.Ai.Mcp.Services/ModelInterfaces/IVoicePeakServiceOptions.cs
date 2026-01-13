@@ -24,4 +24,9 @@ public interface IVoicePeakServiceOptions
     /// VOICEPEAK 出力用のディレクトリ名
     /// </summary>
     string VoicePeakOutputDirectoryName { get; }
+
+    /// <summary>
+    /// VOICEPEAK 用のコンテンツ生成ナレッジオプション群
+    /// </summary>
+    IList<VoicePeakGenerationKnowledgeOptions> VoicePeakKnowledgeOptions { get; }
 }

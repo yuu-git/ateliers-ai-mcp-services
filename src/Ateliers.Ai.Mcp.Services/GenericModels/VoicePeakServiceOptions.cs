@@ -1,4 +1,6 @@
-﻿namespace Ateliers.Ai.Mcp.Services;
+﻿using Ateliers.Ai.Mcp.Services.GenericModels;
+
+namespace Ateliers.Ai.Mcp.Services;
 
 /// <summary>
 /// VOICEPEAK MCP サービスのオプション設定実装
@@ -24,4 +26,9 @@ public sealed class VoicePeakServiceOptions : IVoicePeakServiceOptions
     /// VOICEPEAK 出力用のディレクトリ名（デフォルト: voicepeak）
     /// </summary>
     public string VoicePeakOutputDirectoryName { get; init; } = "voicepeak";
+
+    /// <summary>
+    /// VOICEPEAK 用のコンテンツ生成ナレッジオプション群
+    /// </summary>
+    public IList<VoicePeakGenerationKnowledgeOptions> VoicePeakKnowledgeOptions { get; init; } = new List<VoicePeakGenerationKnowledgeOptions>();
 }

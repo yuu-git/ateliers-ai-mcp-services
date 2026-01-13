@@ -17,6 +17,8 @@ public class PresentationVideoServiceOptions : OutputDirectoryProvider, IPresent
 
     public string VoicevoxOutputDirectoryName { get; init; } = "voice";
 
+    public IList<VoicevoxGenerationKnowledgeOptions> VoicevoxKnowledgeOptions { get; init; } = new List<VoicevoxGenerationKnowledgeOptions>();
+
     // IMarpServiceOptions
     public string MarpExecutablePath { get; init; } = "marp";
 

@@ -263,4 +263,137 @@ public sealed class VoicevoxServiceTests
         // Assert
         mockGenerator.Verify(g => g.Dispose(), Times.Once);
     }
+
+    [Fact(DisplayName = "GetServiceKnowledgeContents: ナレッジコンテンツが存在しない場合にデフォルトメッセージを返すこと")]
+    public void GetServiceKnowledgeContents_WithNoKnowledge_ReturnsDefaultMessage()
+    {
+        // Arrange
+        var mockLogger = new Mock<IMcpLogger>();
+        var mockGenerator = new Mock<IVoicevoxVoiceGenerator>();
+        
+        var options = new VoicevoxServiceOptions
+        {
+            ResourcePath = "/dummy/path",
+            VoiceModelNames = new[] { "0.vmm" },
+            VoicevoxOutputDirectoryName = "voicevox",
+            VoicevoxKnowledgeOptions = new List<VoicevoxGenerationKnowledgeOptions>()
+        };
+
+        var service = new VoicevoxService(mockLogger.Object, options, mockGenerator.Object);
+
+        // Act
+        var contents = service.GetServiceKnowledgeContents().ToList();
+
+        // Assert
+        Assert.Single(contents);
+        Assert.Contains("VOICEVOX MCP ナレッジ", contents[0]);
+        Assert.Contains("現在、VOICEVOX サービスにはナレッジコンテンツが設定されていません", contents[0]);
+        
+        mockLogger.Verify(
+            l => l.Warn(It.Is<string>(s => s.Contains("現在ナレッジコンテンツが存在しません"))),
+            Times.Once);
+    }
+
+    [Fact(DisplayName = "GetServiceKnowledgeContents: nullのナレッジオプションの場合にデフォルトメッセージを返すこと")]
+    public void GetServiceKnowledgeContents_WithNullKnowledge_ReturnsDefaultMessage()
+    {
+        // Arrange
+        var mockLogger = new Mock<IMcpLogger>();
+        var mockGenerator = new Mock<IVoicevoxVoiceGenerator>();
+        
+        var options = new VoicevoxServiceOptions
+        {
+            ResourcePath = "/dummy/path",
+            VoiceModelNames = new[] { "0.vmm" },
+            VoicevoxOutputDirectoryName = "voicevox"
+        };
+
+        var service = new VoicevoxService(mockLogger.Object, options, mockGenerator.Object);
+
+        // Act
+        var contents = service.GetServiceKnowledgeContents().ToList();
+
+        // Assert
+        Assert.Single(contents);
+        Assert.Contains("VOICEVOX MCP ナレッジ", contents[0]);
+        Assert.Contains("現在、VOICEVOX サービスにはナレッジコンテンツが設定されていません", contents[0]);
+    }
+
+    [Fact(DisplayName = "GetServiceKnowledgeContents: ベースクラスがナレッジを返す場合にそれを使用すること")]
+    public void GetServiceKnowledgeContents_WithKnowledgeFromBase_ReturnsKnowledge()
+    {
+        // Arrange
+        var mockLogger = new Mock<IMcpLogger>();
+        var mockGenerator = new Mock<IVoicevoxVoiceGenerator>();
+        
+        var tempFile = Path.GetTempFileName();
+        File.WriteAllText(tempFile, "# テストナレッジ\n\nこれはVOICEVOX用のテストナレッジコンテンツです。");
+
+        try
+        {
+            var options = new VoicevoxServiceOptions
+            {
+                ResourcePath = "/dummy/path",
+                VoiceModelNames = new[] { "0.vmm" },
+                VoicevoxOutputDirectoryName = "voicevox",
+                VoicevoxKnowledgeOptions = new List<VoicevoxGenerationKnowledgeOptions>
+                {
+                    new VoicevoxGenerationKnowledgeOptions
+                    {
+                        KnowledgeType = "LocalFile",
+                        KnowledgeSource = tempFile,
+                        DocumentType = "Markdown",
+                        GenerateHeader = false
+                    }
+                }
+            };
+
+            var service = new VoicevoxService(mockLogger.Object, options, mockGenerator.Object);
+
+            // Act
+            var contents = service.GetServiceKnowledgeContents().ToList();
+
+            // Assert
+            Assert.Single(contents);
+            Assert.Contains("テストナレッジ", contents[0]);
+            Assert.Contains("VOICEVOX用のテストナレッジコンテンツです", contents[0]);
+        }
+        finally
+        {
+            if (File.Exists(tempFile))
+            {
+                File.Delete(tempFile);
+            }
+        }
+    }
+
+    [Fact(DisplayName = "GetServiceKnowledgeContents: ベースクラスが空のコレクションを返す場合にデフォルトメッセージを返すこと")]
+    public void GetServiceKnowledgeContents_WithEmptyKnowledgeFromBase_ReturnsDefaultMessage()
+    {
+        // Arrange
+        var mockLogger = new Mock<IMcpLogger>();
+        var mockGenerator = new Mock<IVoicevoxVoiceGenerator>();
+        
+        var options = new VoicevoxServiceOptions
+        {
+            ResourcePath = "/dummy/path",
+            VoiceModelNames = new[] { "0.vmm" },
+            VoicevoxOutputDirectoryName = "voicevox",
+            VoicevoxKnowledgeOptions = new List<VoicevoxGenerationKnowledgeOptions>()
+        };
+
+        var service = new VoicevoxService(mockLogger.Object, options, mockGenerator.Object);
+
+        // Act
+        var contents = service.GetServiceKnowledgeContents().ToList();
+
+        // Assert
+        Assert.Single(contents);
+        Assert.Contains("VOICEVOX MCP ナレッジ", contents[0]);
+        Assert.Contains("現在、VOICEVOX サービスにはナレッジコンテンツが設定されていません", contents[0]);
+        
+        mockLogger.Verify(
+            l => l.Warn(It.Is<string>(s => s.Contains("現在ナレッジコンテンツが存在しません"))),
+            Times.Once);
+    }
 }

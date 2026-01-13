@@ -6,15 +6,16 @@ namespace Ateliers.Ai.Mcp.Services.VoicePeak;
 /// <summary>
 /// VOICEPEAK MCP サービス
 /// </summary>
-public sealed class VoicePeakService : McpServiceBase, IGenerateVoiceService
+public sealed class VoicePeakService : McpContentGenerationServiceBase, IGenerateVoiceService
 {
+    protected override string LogPrefix { get; init; } = $"{nameof(VoicePeakService)}: ";
+
     private readonly IVoicePeakServiceOptions _options;
     private readonly IVoicePeakVoiceGenerator _generator;
     private readonly string _outputBaseDirectory;
-    private const string LogPrefix = $"{nameof(VoicePeakService)}:";
 
     public VoicePeakService(IMcpLogger mcpLogger, IVoicePeakServiceOptions options)
-        : base(mcpLogger)
+        : base(mcpLogger, options.VoicePeakKnowledgeOptions)
     {
         McpLogger?.Info($"{LogPrefix} 初期化を開始");
 
@@ -47,7 +48,7 @@ public sealed class VoicePeakService : McpServiceBase, IGenerateVoiceService
     /// テスト用コンストラクタ（DI対応）
     /// </summary>
     internal VoicePeakService(IMcpLogger mcpLogger, IVoicePeakServiceOptions options, IVoicePeakVoiceGenerator generator)
-        : base(mcpLogger)
+        : base(mcpLogger, options.VoicePeakKnowledgeOptions)
     {
         _options = options ?? throw new ArgumentNullException(nameof(options));
         _generator = generator ?? throw new ArgumentNullException(nameof(generator));
@@ -65,6 +66,31 @@ public sealed class VoicePeakService : McpServiceBase, IGenerateVoiceService
         return VoicePeakNarratorInfoFormatter.ToFullInfoMarkdownAllNarrators(McpLogger);
     }
 
+    /// <summary>
+    /// ナレッジコンテンツを取得します。
+    /// </summary>
+    /// <returns> ナレッジコンテンツの列挙 </returns>
+    public override IEnumerable<string> GetServiceKnowledgeContents()
+    {
+        var contents = base.GetServiceKnowledgeContents();
+        if (contents == null || !contents.Any())
+        {
+            McpLogger?.Warn($"{LogPrefix} VoicePeak サービスは現在ナレッジコンテンツが存在しません。");
+            return new List<string>()
+            {
+                "# VOICEPEAK MCP ナレッジ：" + Environment.NewLine + Environment.NewLine +
+                "現在、VOICEPEAK サービスにはナレッジコンテンツが設定されていません。",
+            };
+        }
+        return contents;
+    }
+
+    /// <summary>
+    /// 音声ファイルを生成します。
+    /// </summary>
+    /// <param name="request"> 音声生成リクエスト </param>
+    /// <param name="cancellationToken"> キャンセルトークン </param>
+    /// <returns> 生成された音声ファイルのパス </returns>
     public async Task<string> GenerateVoiceFileAsync(
         IGenerateVoiceRequest request,
         CancellationToken cancellationToken = default)
