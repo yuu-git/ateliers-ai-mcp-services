@@ -5,7 +5,7 @@ namespace Ateliers.Ai.Mcp.Services;
 /// <summary>
 /// メディア合成サービスインターフェース
 /// </summary>
-public interface IMediaComposerService
+public interface IMediaComposerService : IMcpContentGenerationGuideProvider
 {
     /// <summary>
     /// ビデオ合成を非同期で実行します。

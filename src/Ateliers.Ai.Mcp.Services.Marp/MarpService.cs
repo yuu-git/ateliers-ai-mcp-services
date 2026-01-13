@@ -26,6 +26,18 @@ public sealed class MarpService : McpServiceBase, IGenerateSlideService
         McpLogger?.Info($"{LogPrefix} 初期化完了");
     }
 
+    /// <summary>
+    /// コンテンツ生成ガイドを取得します。
+    /// </summary>
+    /// <returns> 未実装（将来：Marp マークダウン形式のガイド） </returns>
+    public string GetContentGenerationGuide()
+    {
+        // ToDo: interface IMcpContentGenerationGuideProvider のガイド実装
+        return
+            "未実装：MarpService では、現在コンテンツ生成ガイドは提供されていません。" +
+            "将来的にスライド作成に適した Marp マークダウン形式のガイドが提供される予定です。";
+    }
+
     public string GenerateSlideMarkdown(string sourceMarkdown)
     {
         McpLogger?.Info($"{LogPrefix} GenerateSlideMarkdown 開始: サイズ={sourceMarkdown.Length}文字");

@@ -72,6 +72,18 @@ public sealed class VoicevoxService : McpServiceBase, IGenerateVoiceService, IDi
         _generator = generator ?? throw new ArgumentNullException(nameof(generator));
     }
 
+    /// <summary>
+    /// コンテンツ生成ガイドを取得します。
+    /// </summary>
+    /// <returns> 未実装（将来：Voicevox マークダウン形式のガイド） </returns>
+    public string GetContentGenerationGuide()
+    {
+        // ToDo: interface IMcpContentGenerationGuideProvider のガイド実装
+        return
+            "未実装：VoicevoxService では、現在コンテンツ生成ガイドは提供されていません。" +
+            "将来的にナレーターの特徴や使用方法を説明するガイドが追加される予定です。";
+    }
+
     public async Task<string> GenerateVoiceFileAsync(
         IGenerateVoiceRequest request,
         CancellationToken cancellationToken = default)

@@ -37,6 +37,18 @@ public sealed class FfmpegService : McpServiceBase, IMediaComposerService
         McpLogger?.Info($"{LogPrefix} 初期化完了");
     }
 
+    /// <summary>
+    /// コンテンツ生成ガイドを取得します。
+    /// </summary>
+    /// <returns> 未実装（将来：パラメータ指定方法などのマークダウン形式のガイド） </returns>
+    public string GetContentGenerationGuide()
+    {
+        // ToDo: interface IMcpContentGenerationGuideProvider のガイド実装
+        return
+            "未実装：FfmpegService では、現在コンテンツ生成ガイドは提供されていません。" +
+            "将来的には、パラメータ指定方法などのマークダウン形式のガイドが提供される予定です。";
+    }
+
     /// <inheritdoc/>
     public async Task<string> ComposeAsync(
         GenerateVideoRequest request,

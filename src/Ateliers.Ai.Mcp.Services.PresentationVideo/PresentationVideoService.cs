@@ -57,6 +57,18 @@ public sealed class PresentationVideoService : McpServiceBase, IPresentationVide
         McpLogger?.Info($"{LogPrefix} 初期化完了");
     }
 
+    /// <summary>
+    /// コンテンツ生成ガイドを取得します。
+    /// </summary>
+    /// <returns> 未実装（将来：指定する音声やスライドなどのマークダウン形式のガイド） </returns>
+    public string GetContentGenerationGuide()
+    {
+        // ToDo: interface IMcpContentGenerationGuideProvider のガイド実装
+        return
+            "未実装：PresentationVideoService では、現在コンテンツ生成ガイドは提供されていません。" +
+            "将来的には、指定する音声やスライドなどのマークダウン形式のガイドが提供される予定です。";
+    }
+
     public async Task<PresentationVideoResult> GenerateAsync(
         PresentationVideoRequest request,
         CancellationToken cancellationToken = default)

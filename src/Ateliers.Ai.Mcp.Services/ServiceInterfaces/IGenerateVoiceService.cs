@@ -1,6 +1,6 @@
 ﻿namespace Ateliers.Ai.Mcp.Services;
 
-public interface IGenerateVoiceService
+public interface IGenerateVoiceService : IMcpContentGenerationGuideProvider
 {
     Task<string> GenerateVoiceFileAsync(
         IGenerateVoiceRequest request,

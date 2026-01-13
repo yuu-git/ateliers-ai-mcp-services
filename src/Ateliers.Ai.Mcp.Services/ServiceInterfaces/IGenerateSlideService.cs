@@ -1,6 +1,6 @@
 ﻿namespace Ateliers.Ai.Mcp.Services;
 
-public interface IGenerateSlideService
+public interface IGenerateSlideService : IMcpContentGenerationGuideProvider
 {
     string GenerateSlideMarkdown(string sourceMarkdown);
 

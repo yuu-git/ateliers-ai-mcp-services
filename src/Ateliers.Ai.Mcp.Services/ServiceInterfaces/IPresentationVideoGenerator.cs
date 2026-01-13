@@ -2,7 +2,7 @@
 
 namespace Ateliers.Ai.Mcp.Services;
 
-public interface IPresentationVideoGenerator
+public interface IPresentationVideoGenerator : IMcpContentGenerationGuideProvider
 {
     Task<PresentationVideoResult> GenerateAsync(
         PresentationVideoRequest request,

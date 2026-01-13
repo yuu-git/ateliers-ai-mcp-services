@@ -1,5 +1,4 @@
-﻿using Ateliers.Ai.Mcp.Services.GenericModels;
-using Ateliers.Voice.Engines;
+﻿using Ateliers.Voice.Engines;
 using Ateliers.Voice.Engines.VoicePeakTools;
 
 namespace Ateliers.Ai.Mcp.Services.VoicePeak;
@@ -55,6 +54,15 @@ public sealed class VoicePeakService : McpServiceBase, IGenerateVoiceService
         _outputBaseDirectory = VoiceOutputDirectoryHelper.GetOrCreateBaseDirectory(
             options.OutputRootDirectory,
             options.VoicePeakOutputDirectoryName);
+    }
+
+    /// <summary>
+    /// コンテンツ生成ガイドを取得します。
+    /// </summary>
+    /// <returns> VoicePeakナレーターの情報を含むマークダウン形式のガイド </returns>
+    public string GetContentGenerationGuide()
+    {
+        return VoicePeakNarratorInfoFormatter.ToFullInfoMarkdownAllNarrators(McpLogger);
     }
 
     public async Task<string> GenerateVoiceFileAsync(
