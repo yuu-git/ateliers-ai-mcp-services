@@ -1,4 +1,4 @@
-using Notion.Client;
+﻿using Notion.Client;
 using Ateliers.Ai.Mcp.Services;
 
 namespace Ateliers.Ai.Mcp.Services.Notion;
@@ -79,7 +79,7 @@ public class NotionIdeasService : NotionServiceBase, INotionIdeasService
 
         var request = new PagesCreateParameters
         {
-            Parent = new DatabaseParentInput { DatabaseId = databaseId },
+            Parent = new DatabaseParentRequest { DatabaseId = databaseId },
             Properties = properties
         };
 
@@ -121,63 +121,74 @@ public class NotionIdeasService : NotionServiceBase, INotionIdeasService
         McpLogger?.Info($"{ServiceLogPrefix} SearchIdeasAsync 開始: keyword={keyword}, tags={tags?.Length ?? 0}件, limit={limit}");
 
         var databaseId = GetIdeasDatabaseId();
-        var filters = new List<Filter>();
-
-        // キーワード検索（タイトル）
-        if (!string.IsNullOrWhiteSpace(keyword))
-        {
-            filters.Add(new TitleFilter("Name", contains: keyword));
-            McpLogger?.Debug($"{ServiceLogPrefix} SearchIdeasAsync: キーワードフィルタを追加: {keyword}");
-        }
-
-        // タグフィルタ
-        if (tags != null && tags.Length > 0)
-        {
-            foreach (var tag in tags)
-            {
-                filters.Add(new MultiSelectFilter("Tags", contains: tag));
-            }
-            McpLogger?.Debug($"{ServiceLogPrefix} SearchIdeasAsync: タグフィルタを追加: {string.Join(", ", tags)}");
-        }
-
-        var queryParams = new DatabasesQueryParameters
-        {
-            PageSize = limit
-        };
-
-        if (filters.Count > 0)
-        {
-            queryParams.Filter = filters.Count == 1
-                ? filters[0]
-                : new CompoundFilter { And = filters };
-            McpLogger?.Debug($"{ServiceLogPrefix} SearchIdeasAsync: フィルタ数={filters.Count}");
-        }
 
         McpLogger?.Info($"{ServiceLogPrefix} SearchIdeasAsync: Notion API 呼び出し中...");
-        var response = await Client.Databases.QueryAsync(databaseId, queryParams);
+        // Search APIを使用（SearchRequestを使用）
+        var searchRequest = new SearchRequest
+        {
+            Query = keyword,
+            Filter = new SearchFilter { Value = SearchObjectType.Page }
+        };
+        var response = await Client.Search.SearchAsync(searchRequest);
 
-        McpLogger?.Info($"{ServiceLogPrefix} SearchIdeasAsync 完了: {response.Results.Count}件取得");
+        // データベースに属するページのみをフィルタリング
+        var databasePages = response.Results
+            .Where(r => r is Page page && 
+                   page.Parent is DatabaseParent dbParent && 
+                   dbParent.DatabaseId == databaseId)
+            .Cast<Page>()
+            .ToList();
 
-        if (response.Results.Count == 0)
+        // タグフィルタを手動で適用
+        if (tags != null && tags.Length > 0)
+        {
+            databasePages = databasePages.Where(page =>
+            {
+                if (page.Properties.TryGetValue("Tags", out var tagsValue))
+                {
+                    if (tagsValue is MultiSelectPropertyValue multiSelectProp)
+                    {
+                        var pageTags = multiSelectProp.MultiSelect.Select(t => t.Name).ToList();
+                        return tags.Any(tag => pageTags.Contains(tag));
+                    }
+                }
+                return false;
+            }).ToList();
+        }
+
+        McpLogger?.Info($"{ServiceLogPrefix} SearchIdeasAsync 完了: {databasePages.Count}件取得");
+
+        if (databasePages.Count == 0)
         {
             return "No ideas found.";
         }
 
-        var ideas = response.Results.Select(page =>
+        var ideas = databasePages.Select(page =>
         {
-            var props = (page as Page)?.Properties;
-            var ideaTitle = props != null && props.ContainsKey("Name") && props["Name"] is TitlePropertyValue titleProp
-                ? string.Join("", titleProp.Title.Select(t => t.PlainText))
-                : "Untitled";
+            var props = page.Properties;
+            
+            string ideaTitle = "Untitled";
+            if (props != null && props.TryGetValue("Name", out var nameValue))
+            {
+                if (nameValue is TitlePropertyValue titlePropertyValue)
+                {
+                    ideaTitle = string.Join("", titlePropertyValue.Title.Select(t => t.PlainText));
+                }
+            }
 
-            var tagList = props != null && props.ContainsKey("Tags") && props["Tags"] is MultiSelectPropertyValue tagProp
-                ? string.Join(", ", tagProp.MultiSelect.Select(t => t.Name))
-                : "未設定";
+            string tagList = "未設定";
+            if (props != null && props.TryGetValue("Tags", out var tagsValue))
+            {
+                if (tagsValue is MultiSelectPropertyValue tagPropertyValue)
+                {
+                    tagList = string.Join(", ", tagPropertyValue.MultiSelect.Select(t => t.Name));
+                }
+            }
 
             return $"- {ideaTitle} (タグ: {tagList}, ID: {page.Id})";
         });
 
-        return $"Ideas ({response.Results.Count}):\n" + string.Join("\n", ideas);
+        return $"Ideas ({databasePages.Count}):\n" + string.Join("\n", ideas);
     }
 
     /// <summary>

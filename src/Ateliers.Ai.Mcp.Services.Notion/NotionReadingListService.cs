@@ -1,4 +1,4 @@
-using Notion.Client;
+﻿using Notion.Client;
 using Ateliers.Ai.Mcp.Services;
 
 namespace Ateliers.Ai.Mcp.Services.Notion;
@@ -144,7 +144,7 @@ public class NotionReadingListService : NotionServiceBase, INotionReadingListSer
 
         var request = new PagesCreateParameters
         {
-            Parent = new DatabaseParentInput { DatabaseId = databaseId },
+            Parent = new DatabaseParentRequest { DatabaseId = databaseId },
             Properties = properties
         };
 
@@ -186,66 +186,111 @@ public class NotionReadingListService : NotionServiceBase, INotionReadingListSer
         McpLogger?.Info($"{ServiceLogPrefix} ListReadingListAsync 開始: status={status}, priority={priority}, limit={limit}");
 
         var databaseId = GetReadingListDatabaseId();
-        var filters = new List<Filter>();
-
-        if (!string.IsNullOrWhiteSpace(status))
-        {
-            filters.Add(new SelectFilter("Status", equal: status));
-            McpLogger?.Debug($"{ServiceLogPrefix} ListReadingListAsync: ステータスフィルタを追加: {status}");
-        }
-
-        if (!string.IsNullOrWhiteSpace(priority))
-        {
-            filters.Add(new SelectFilter("Priority", equal: priority));
-            McpLogger?.Debug($"{ServiceLogPrefix} ListReadingListAsync: 優先度フィルタを追加: {priority}");
-        }
-
-        var queryParams = new DatabasesQueryParameters
-        {
-            PageSize = limit
-        };
-
-        if (filters.Count > 0)
-        {
-            queryParams.Filter = filters.Count == 1
-                ? filters[0]
-                : new CompoundFilter { And = filters };
-            McpLogger?.Debug($"{ServiceLogPrefix} ListReadingListAsync: フィルタ数={filters.Count}");
-        }
 
         McpLogger?.Info($"{ServiceLogPrefix} ListReadingListAsync: Notion API 呼び出し中...");
-        var response = await Client.Databases.QueryAsync(databaseId, queryParams);
+        // Search APIを使用（SearchRequestを使用）
+        var searchRequest = new SearchRequest
+        {
+            Filter = new SearchFilter { Value = SearchObjectType.Page }
+        };
+        var response = await Client.Search.SearchAsync(searchRequest);
 
-        McpLogger?.Info($"{ServiceLogPrefix} ListReadingListAsync 完了: {response.Results.Count}件取得");
+        // データベースに属するページのみをフィルタリング
+        var databasePages = response.Results
+            .Where(r => r is Page page && 
+                   page.Parent is DatabaseParent dbParent && 
+                   dbParent.DatabaseId == databaseId)
+            .Cast<Page>()
+            .ToList();
 
-        if (response.Results.Count == 0)
+        // Status フィルタを手動で適用
+        if (!string.IsNullOrWhiteSpace(status))
+        {
+            databasePages = databasePages.Where(p =>
+            {
+                if (p.Properties.TryGetValue("Status", out var propValue))
+                {
+                    if (propValue is SelectPropertyValue selectProp)
+                    {
+                        return selectProp.Select?.Name == status;
+                    }
+                }
+                return false;
+            }).ToList();
+            McpLogger?.Debug($"{ServiceLogPrefix} ListReadingListAsync: ステータスフィルタを適用: {status}");
+        }
+
+        // Priority フィルタを手動で適用
+        if (!string.IsNullOrWhiteSpace(priority))
+        {
+            databasePages = databasePages.Where(p =>
+            {
+                if (p.Properties.TryGetValue("Priority", out var propValue))
+                {
+                    if (propValue is SelectPropertyValue selectProp)
+                    {
+                        return selectProp.Select?.Name == priority;
+                    }
+                }
+                return false;
+            }).ToList();
+            McpLogger?.Debug($"{ServiceLogPrefix} ListReadingListAsync: 優先度フィルタを適用: {priority}");
+        }
+
+        // Limit適用
+        databasePages = databasePages.Take(limit).ToList();
+
+        McpLogger?.Info($"{ServiceLogPrefix} ListReadingListAsync 完了: {databasePages.Count}件取得");
+
+        if (databasePages.Count == 0)
         {
             return "No reading list items found.";
         }
 
-        var items = response.Results.Select(page =>
+        var items = databasePages.Select(page =>
         {
-            var props = (page as Page)?.Properties;
-            var itemTitle = props != null && props.ContainsKey("Name") && props["Name"] is TitlePropertyValue titleProp
-                ? string.Join("", titleProp.Title.Select(t => t.PlainText))
-                : "Untitled";
+            var props = page.Properties;
+            
+            string itemTitle = "Untitled";
+            if (props != null && props.TryGetValue("Name", out var nameValue))
+            {
+                if (nameValue is TitlePropertyValue titlePropertyValue)
+                {
+                    itemTitle = string.Join("", titlePropertyValue.Title.Select(t => t.PlainText));
+                }
+            }
 
-            var statusValue = props != null && props.ContainsKey("Status") && props["Status"] is SelectPropertyValue selectProp
-                ? selectProp.Select?.Name ?? "未設定"
-                : "未設定";
+            string statusValue = "未設定";
+            if (props != null && props.TryGetValue("Status", out var statusVal))
+            {
+                if (statusVal is SelectPropertyValue statusPropertyValue)
+                {
+                    statusValue = statusPropertyValue.Select?.Name ?? "未設定";
+                }
+            }
 
-            var priorityValue = props != null && props.ContainsKey("Priority") && props["Priority"] is SelectPropertyValue priorityProp
-                ? priorityProp.Select?.Name ?? "未設定"
-                : "未設定";
+            string priorityValue = "未設定";
+            if (props != null && props.TryGetValue("Priority", out var priorityVal))
+            {
+                if (priorityVal is SelectPropertyValue priorityPropertyValue)
+                {
+                    priorityValue = priorityPropertyValue.Select?.Name ?? "未設定";
+                }
+            }
 
-            var typeValue = props != null && props.ContainsKey("Type") && props["Type"] is SelectPropertyValue typeProp
-                ? typeProp.Select?.Name ?? "未設定"
-                : "未設定";
+            string typeValue = "未設定";
+            if (props != null && props.TryGetValue("Type", out var typeVal))
+            {
+                if (typeVal is SelectPropertyValue typePropertyValue)
+                {
+                    typeValue = typePropertyValue.Select?.Name ?? "未設定";
+                }
+            }
 
             return $"- [{statusValue}] {itemTitle} (種類: {typeValue}, 優先度: {priorityValue}, ID: {page.Id})";
         });
 
-        return $"Reading List ({response.Results.Count}):\n" + string.Join("\n", items);
+        return $"Reading List ({databasePages.Count}):\n" + string.Join("\n", items);
     }
 
     /// <summary>

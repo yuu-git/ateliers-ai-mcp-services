@@ -1,4 +1,4 @@
-using Notion.Client;
+﻿using Notion.Client;
 using Ateliers.Ai.Mcp.Services;
 
 namespace Ateliers.Ai.Mcp.Services.Notion;
@@ -109,7 +109,7 @@ public class NotionTasksService : NotionServiceBase, INotionTasksService
 
         var request = new PagesCreateParameters
         {
-            Parent = new DatabaseParentInput { DatabaseId = databaseId },
+            Parent = new DatabaseParentRequest { DatabaseId = databaseId },
             Properties = properties
         };
 
@@ -255,69 +255,120 @@ public class NotionTasksService : NotionServiceBase, INotionTasksService
         McpLogger?.Info($"{ServiceLogPrefix} ListTasksAsync 開始: status={status}, priority={priority}, dueSoon={dueSoon}, limit={limit}");
 
         var databaseId = GetTasksDatabaseId();
-        var filters = new List<Filter>();
 
+        McpLogger?.Info($"{ServiceLogPrefix} ListTasksAsync: Notion API 呼び出し中...");
+        // Search APIを使用（SearchRequestを使用）
+        var searchRequest = new SearchRequest
+        {
+            Filter = new SearchFilter { Value = SearchObjectType.Page }
+        };
+        var response = await Client.Search.SearchAsync(searchRequest);
+
+        // データベースに属するページのみをフィルタリング
+        var databasePages = response.Results
+            .Where(r => r is Page page && 
+                   page.Parent is DatabaseParent dbParent && 
+                   dbParent.DatabaseId == databaseId)
+            .Cast<Page>()
+            .ToList();
+
+        // Status フィルタを手動で適用
         if (!string.IsNullOrWhiteSpace(status))
         {
-            filters.Add(new SelectFilter("Status", equal: status));
-            McpLogger?.Debug($"{ServiceLogPrefix} ListTasksAsync: ステータスフィルタを追加: {status}");
+            databasePages = databasePages.Where(p =>
+            {
+                if (p.Properties.TryGetValue("Status", out var propValue))
+                {
+                    if (propValue is SelectPropertyValue selectProp)
+                    {
+                        return selectProp.Select?.Name == status;
+                    }
+                }
+                return false;
+            }).ToList();
+            McpLogger?.Debug($"{ServiceLogPrefix} ListTasksAsync: ステータスフィルタを適用: {status}");
         }
 
+        // Priority フィルタを手動で適用
         if (!string.IsNullOrWhiteSpace(priority))
         {
-            filters.Add(new SelectFilter("Priority", equal: priority));
-            McpLogger?.Debug($"{ServiceLogPrefix} ListTasksAsync: 優先度フィルタを追加: {priority}");
+            databasePages = databasePages.Where(p =>
+            {
+                if (p.Properties.TryGetValue("Priority", out var propValue))
+                {
+                    if (propValue is SelectPropertyValue selectProp)
+                    {
+                        return selectProp.Select?.Name == priority;
+                    }
+                }
+                return false;
+            }).ToList();
+            McpLogger?.Debug($"{ServiceLogPrefix} ListTasksAsync: 優先度フィルタを適用: {priority}");
         }
 
+        // Date フィルタを手動で適用
         if (dueSoon == true)
         {
             var nextWeek = DateTime.Now.AddDays(7);
-            filters.Add(new DateFilter("Date", onOrBefore: nextWeek));
-            McpLogger?.Debug($"{ServiceLogPrefix} ListTasksAsync: 期限フィルタを追加: {nextWeek:yyyy-MM-dd}まで");
+            databasePages = databasePages.Where(p =>
+            {
+                if (p.Properties.TryGetValue("Date", out var propValue))
+                {
+                    if (propValue is DatePropertyValue dateProp && dateProp.Date?.Start != null)
+                    {
+                        return dateProp.Date.Start <= nextWeek;
+                    }
+                }
+                return false;
+            }).ToList();
+            McpLogger?.Debug($"{ServiceLogPrefix} ListTasksAsync: 期限フィルタを適用: {nextWeek:yyyy-MM-dd}まで");
         }
 
-        var queryParams = new DatabasesQueryParameters
-        {
-            PageSize = limit
-        };
+        // Limit適用
+        databasePages = databasePages.Take(limit).ToList();
 
-        if (filters.Count > 0)
-        {
-            queryParams.Filter = filters.Count == 1
-                ? filters[0]
-                : new CompoundFilter { And = filters };
-            McpLogger?.Debug($"{ServiceLogPrefix} ListTasksAsync: フィルタ数={filters.Count}");
-        }
+        McpLogger?.Info($"{ServiceLogPrefix} ListTasksAsync 完了: {databasePages.Count}件取得");
 
-        McpLogger?.Info($"{ServiceLogPrefix} ListTasksAsync: Notion API 呼び出し中...");
-        var response = await Client.Databases.QueryAsync(databaseId, queryParams);
-
-        McpLogger?.Info($"{ServiceLogPrefix} ListTasksAsync 完了: {response.Results.Count}件取得");
-
-        if (response.Results.Count == 0)
+        if (databasePages.Count == 0)
         {
             return "No tasks found.";
         }
 
-        var tasks = response.Results.Select(page =>
+        var tasks = databasePages.Select(page =>
         {
-            var props = (page as Page)?.Properties;
-            var title = props != null && props.ContainsKey("Name") && props["Name"] is TitlePropertyValue titleProp
-                ? string.Join("", titleProp.Title.Select(t => t.PlainText))
-                : "Untitled";
+            var props = page.Properties;
+            
+            string title = "Untitled";
+            if (props != null && props.TryGetValue("Name", out var nameValue))
+            {
+                if (nameValue is TitlePropertyValue titlePropertyValue)
+                {
+                    title = string.Join("", titlePropertyValue.Title.Select(t => t.PlainText));
+                }
+            }
 
-            var statusValue = props != null && props.ContainsKey("Status") && props["Status"] is SelectPropertyValue selectProp
-                ? selectProp.Select?.Name ?? "未設定"
-                : "未設定";
+            string statusValue = "未設定";
+            if (props != null && props.TryGetValue("Status", out var statusVal))
+            {
+                if (statusVal is SelectPropertyValue statusPropertyValue)
+                {
+                    statusValue = statusPropertyValue.Select?.Name ?? "未設定";
+                }
+            }
 
-            var priorityValue = props != null && props.ContainsKey("Priority") && props["Priority"] is SelectPropertyValue priorityProp
-                ? priorityProp.Select?.Name ?? "未設定"
-                : "未設定";
+            string priorityValue = "未設定";
+            if (props != null && props.TryGetValue("Priority", out var priorityVal))
+            {
+                if (priorityVal is SelectPropertyValue priorityPropertyValue)
+                {
+                    priorityValue = priorityPropertyValue.Select?.Name ?? "未設定";
+                }
+            }
 
             return $"- [{statusValue}] {title} (優先度: {priorityValue}, ID: {page.Id})";
         });
 
-        return $"Tasks ({response.Results.Count}):\n" + string.Join("\n", tasks);
+        return $"Tasks ({databasePages.Count}):\n" + string.Join("\n", tasks);
     }
 
     /// <summary>
