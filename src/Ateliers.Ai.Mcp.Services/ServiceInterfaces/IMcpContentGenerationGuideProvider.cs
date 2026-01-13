@@ -16,3 +16,43 @@ public interface IMcpContentGenerationGuideProvider
     /// <returns> コンテンツ生成ガイド </returns>
     string GetContentGenerationGuide();
 }
+
+// 将来的な拡張予定として、以下を残しておく
+
+/*
+
+// 問題：string GetContentGenerationGuide() は情報がフラットすぎる
+//
+// 今は Markdown 文字列で返す想定ですが、将来こうなります：
+// - どこまでが「前提条件」？
+// - どこまでが「手順」？
+// - どこが「制約」？
+// - どこが「例」？
+// 
+// → 再利用・合成・順序制御が難しくなる
+// 今はまだ大丈夫だが、あと2〜3サービス増えると並び順・重複・整形地獄になる。
+//
+// 解決策：返却型を「構造化ガイド」にする
+//
+// これで何が良くなるか:
+// - Tool は 並び順・統合ルールだけ持てばいい
+// - サービスは 責務範囲だけ埋める
+// - Markdown生成は最後の1箇所だけ
+// 
+// 👉 説明 = データ / 表示 = 別責務
+
+public interface IMcpContentGenerationGuideProvider
+{
+    ContentGenerationGuide GetContentGenerationGuide();
+}
+
+public sealed class ContentGenerationGuide
+{
+    public string Title { get; init; }
+    public IReadOnlyList<string> Preconditions { get; init; }
+    public IReadOnlyList<string> Steps { get; init; }
+    public IReadOnlyList<string> Constraints { get; init; }
+    public IReadOnlyList<string> Examples { get; init; }
+}
+
+*/
