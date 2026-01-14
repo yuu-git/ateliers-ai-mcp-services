@@ -8,6 +8,9 @@
 /// </remarks>
 public class PresentationVideoServiceOptions : OutputDirectoryProvider, IPresentationVideoOptions, IVoicevoxServiceOptions, IMarpServiceOptions, IFfmpegServiceOptions
 {
+    // IPresentationVideoOptions
+    public IList<PresentationVideoGenerationKnowledgeOptions> PresentationVideoKnowledgeOptions { get; init; } = new List<PresentationVideoGenerationKnowledgeOptions>();
+
     // IVoicevoxServiceOptions
     public required string ResourcePath { get; init; } = "voicevox";
 

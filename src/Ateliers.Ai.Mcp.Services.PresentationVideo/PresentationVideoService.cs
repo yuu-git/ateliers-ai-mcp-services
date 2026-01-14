@@ -3,13 +3,14 @@ using NAudio.Wave;
 
 namespace Ateliers.Ai.Mcp.Services.PresentationVideo;
 
-public sealed class PresentationVideoService : McpServiceBase, IPresentationVideoGenerator
+public sealed class PresentationVideoService : McpContentGenerationServiceBase, IPresentationVideoGenerator
 {
+    protected override string LogPrefix { get; init; } = $"{nameof(PresentationVideoService)}:";
+
     private readonly IPresentationVideoOptions _options;
     private readonly IGenerateVoiceService _voiceService;
     private readonly IGenerateSlideService _slideService;
     private readonly IMediaComposerService _mediaComposerService;
-    private const string LogPrefix = $"{nameof(PresentationVideoService)}:";
 
     public PresentationVideoService(
         IMcpLogger mcpLogger,
@@ -17,7 +18,7 @@ public sealed class PresentationVideoService : McpServiceBase, IPresentationVide
         IGenerateVoiceService voiceService,
         IGenerateSlideService slideService,
         IMediaComposerService mediaComposerService)
-        : base(mcpLogger)
+        : base(mcpLogger, options.PresentationVideoKnowledgeOptions)
     {
         McpLogger?.Info($"{LogPrefix} 初期化処理開始");
 
@@ -67,6 +68,25 @@ public sealed class PresentationVideoService : McpServiceBase, IPresentationVide
         return
             "未実装：PresentationVideoService では、現在コンテンツ生成ガイドは提供されていません。" +
             "将来的には、指定する音声やスライドなどのマークダウン形式のガイドが提供される予定です。";
+    }
+
+    /// <summary>
+    /// ナレッジコンテンツを取得します。
+    /// </summary>
+    /// <returns> ナレッジコンテンツの列挙 </returns>
+    public override IEnumerable<string> GetServiceKnowledgeContents()
+    {
+        var contents = base.GetServiceKnowledgeContents();
+        if (contents == null || !contents.Any())
+        {
+            McpLogger?.Warn($"{LogPrefix} PresentationVideo サービスは現在ナレッジコンテンツが存在しません。");
+            return new List<string>()
+            {
+                "# PRESENTATION VIDEO MCP ナレッジ：" + Environment.NewLine + Environment.NewLine +
+                "現在、PRESENTATION VIDEO サービスにはナレッジコンテンツが設定されていません。",
+            };
+        }
+        return contents;
     }
 
     public async Task<PresentationVideoResult> GenerateAsync(

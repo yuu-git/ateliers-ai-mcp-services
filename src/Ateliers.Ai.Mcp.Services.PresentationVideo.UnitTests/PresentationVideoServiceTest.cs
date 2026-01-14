@@ -3,6 +3,7 @@ using Ateliers.Ai.Mcp.Services.Ffmpeg;
 using Ateliers.Ai.Mcp.Services.GenericModels;
 using Ateliers.Ai.Mcp.Services.Marp;
 using Ateliers.Ai.Mcp.Services.Voicevox;
+using Moq;
 
 namespace Ateliers.Ai.Mcp.Services.PresentationVideo.UnitTests
 {
@@ -105,5 +106,159 @@ namespace Ateliers.Ai.Mcp.Services.PresentationVideo.UnitTests
 
             Assert.True(File.Exists(result.VideoPath));
         }
+
+        [Fact(DisplayName = "GetServiceKnowledgeContents: ナレッジコンテンツが存在しない場合にデフォルトメッセージを返すこと")]
+        public void GetServiceKnowledgeContents_WithNoKnowledge_ReturnsDefaultMessage()
+        {
+            // Arrange
+            var logger = new InMemoryMcpLogger(new McpLoggerOptions());
+            var mockVoiceService = new Moq.Mock<IGenerateVoiceService>();
+            var mockSlideService = new Moq.Mock<IGenerateSlideService>();
+            var mockMediaService = new Moq.Mock<IMediaComposerService>();
+
+            var options = new PresentationVideoServiceOptions
+            {
+                ResourcePath = "/dummy/path",
+                MarpExecutablePath = "marp",
+                FfmpegExecutablePath = "ffmpeg",
+                PresentationVideoKnowledgeOptions = new List<PresentationVideoGenerationKnowledgeOptions>()
+            };
+
+            var service = new PresentationVideoService(
+                logger,
+                options,
+                mockVoiceService.Object,
+                mockSlideService.Object,
+                mockMediaService.Object);
+
+            // Act
+            var contents = service.GetServiceKnowledgeContents().ToList();
+
+            // Assert
+            Assert.Single(contents);
+            Assert.Contains("PRESENTATION VIDEO MCP ナレッジ", contents[0]);
+            Assert.Contains("現在、PRESENTATION VIDEO サービスにはナレッジコンテンツが設定されていません", contents[0]);
+        }
+
+        [Fact(DisplayName = "GetServiceKnowledgeContents: nullのナレッジオプションの場合にデフォルトメッセージを返すこと")]
+        public void GetServiceKnowledgeContents_WithNullKnowledge_ReturnsDefaultMessage()
+        {
+            // Arrange
+            var logger = new InMemoryMcpLogger(new McpLoggerOptions());
+            var mockVoiceService = new Moq.Mock<IGenerateVoiceService>();
+            var mockSlideService = new Moq.Mock<IGenerateSlideService>();
+            var mockMediaService = new Moq.Mock<IMediaComposerService>();
+
+            var options = new PresentationVideoServiceOptions
+            {
+                ResourcePath = "/dummy/path",
+                MarpExecutablePath = "marp",
+                FfmpegExecutablePath = "ffmpeg"
+            };
+
+            var service = new PresentationVideoService(
+                logger,
+                options,
+                mockVoiceService.Object,
+                mockSlideService.Object,
+                mockMediaService.Object);
+
+            // Act
+            var contents = service.GetServiceKnowledgeContents().ToList();
+
+            // Assert
+            Assert.Single(contents);
+            Assert.Contains("PRESENTATION VIDEO MCP ナレッジ", contents[0]);
+            Assert.Contains("現在、PRESENTATION VIDEO サービスにはナレッジコンテンツが設定されていません", contents[0]);
+        }
+
+        [Fact(DisplayName = "GetServiceKnowledgeContents: ベースクラスがナレッジを返す場合にそれを使用すること")]
+        public void GetServiceKnowledgeContents_WithKnowledgeFromBase_ReturnsKnowledge()
+        {
+            // Arrange
+            var logger = new InMemoryMcpLogger(new McpLoggerOptions());
+            var mockVoiceService = new Moq.Mock<IGenerateVoiceService>();
+            var mockSlideService = new Moq.Mock<IGenerateSlideService>();
+            var mockMediaService = new Moq.Mock<IMediaComposerService>();
+
+            var tempFile = Path.GetTempFileName();
+            File.WriteAllText(tempFile, "# PresentationVideoテストナレッジ\n\nこれはプレゼンテーション動画用のテストナレッジコンテンツです。");
+
+            try
+            {
+                var options = new PresentationVideoServiceOptions
+                {
+                    ResourcePath = "/dummy/path",
+                    MarpExecutablePath = "marp",
+                    FfmpegExecutablePath = "ffmpeg",
+                    PresentationVideoKnowledgeOptions = new List<PresentationVideoGenerationKnowledgeOptions>
+                    {
+                        new PresentationVideoGenerationKnowledgeOptions
+                        {
+                            KnowledgeType = "LocalFile",
+                            KnowledgeSource = tempFile,
+                            DocumentType = "Markdown",
+                            GenerateHeader = false
+                        }
+                    }
+                };
+
+                var service = new PresentationVideoService(
+                    logger,
+                    options,
+                    mockVoiceService.Object,
+                    mockSlideService.Object,
+                    mockMediaService.Object);
+
+                // Act
+                var contents = service.GetServiceKnowledgeContents().ToList();
+
+                // Assert
+                Assert.Single(contents);
+                Assert.Contains("PresentationVideoテストナレッジ", contents[0]);
+                Assert.Contains("プレゼンテーション動画用のテストナレッジコンテンツです", contents[0]);
+            }
+            finally
+            {
+                if (File.Exists(tempFile))
+                {
+                    File.Delete(tempFile);
+                }
+            }
+        }
+
+        [Fact(DisplayName = "GetServiceKnowledgeContents: ベースクラスが空のコレクションを返す場合にデフォルトメッセージを返すこと")]
+        public void GetServiceKnowledgeContents_WithEmptyKnowledgeFromBase_ReturnsDefaultMessage()
+        {
+            // Arrange
+            var logger = new InMemoryMcpLogger(new McpLoggerOptions());
+            var mockVoiceService = new Moq.Mock<IGenerateVoiceService>();
+            var mockSlideService = new Moq.Mock<IGenerateSlideService>();
+            var mockMediaService = new Moq.Mock<IMediaComposerService>();
+
+            var options = new PresentationVideoServiceOptions
+            {
+                ResourcePath = "/dummy/path",
+                MarpExecutablePath = "marp",
+                FfmpegExecutablePath = "ffmpeg",
+                PresentationVideoKnowledgeOptions = new List<PresentationVideoGenerationKnowledgeOptions>()
+            };
+
+            var service = new PresentationVideoService(
+                logger,
+                options,
+                mockVoiceService.Object,
+                mockSlideService.Object,
+                mockMediaService.Object);
+
+            // Act
+            var contents = service.GetServiceKnowledgeContents().ToList();
+
+            // Assert
+            Assert.Single(contents);
+            Assert.Contains("PRESENTATION VIDEO MCP ナレッジ", contents[0]);
+            Assert.Contains("現在、PRESENTATION VIDEO サービスにはナレッジコンテンツが設定されていません", contents[0]);
+        }
     }
 }
+
