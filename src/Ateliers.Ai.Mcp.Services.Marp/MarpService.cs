@@ -4,13 +4,14 @@ using System.Text;
 
 namespace Ateliers.Ai.Mcp.Services.Marp;
 
-public sealed class MarpService : McpServiceBase, IGenerateSlideService
+public sealed class MarpService : McpContentGenerationServiceBase, IGenerateSlideService
 {
+    protected override string LogPrefix { get; init; } = $"{nameof(MarpService)}:";
+
     private readonly IMarpServiceOptions _options;
-    private const string LogPrefix = $"{nameof(MarpService)}:";
 
     public MarpService(IMcpLogger mcpLogger, IMarpServiceOptions options)
-        : base(mcpLogger)
+        : base(mcpLogger, options.MarpKnowledgeOptions)
     {
         McpLogger?.Info($"{LogPrefix} 初期化処理開始");
 
@@ -36,6 +37,25 @@ public sealed class MarpService : McpServiceBase, IGenerateSlideService
         return
             "未実装：MarpService では、現在コンテンツ生成ガイドは提供されていません。" +
             "将来的にスライド作成に適した Marp マークダウン形式のガイドが提供される予定です。";
+    }
+
+    /// <summary>
+    /// ナレッジコンテンツを取得します。
+    /// </summary>
+    /// <returns> ナレッジコンテンツの列挙 </returns>
+    public override IEnumerable<string> GetServiceKnowledgeContents()
+    {
+        var contents = base.GetServiceKnowledgeContents();
+        if (contents == null || !contents.Any())
+        {
+            McpLogger?.Warn($"{LogPrefix} Marp サービスは現在ナレッジコンテンツが存在しません。");
+            return new List<string>()
+            {
+                "# MARP MCP ナレッジ：" + Environment.NewLine + Environment.NewLine +
+                "現在、MARP サービスにはナレッジコンテンツが設定されていません。",
+            };
+        }
+        return contents;
     }
 
     public string GenerateSlideMarkdown(string sourceMarkdown)

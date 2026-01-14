@@ -10,10 +10,11 @@ namespace Ateliers.Ai.Mcp.Services.Ffmpeg;
 /// <remarks>
 /// このサービスは、FFmpegコマンドラインツールを利用して、画像と音声を組み合わせた動画を生成します。
 /// </remarks>
-public sealed class FfmpegService : McpServiceBase, IMediaComposerService
+public sealed class FfmpegService : McpContentGenerationServiceBase, IMediaComposerService
 {
+    protected override string LogPrefix { get; init; } = $"{nameof(FfmpegService)}:";
+
     private readonly IFfmpegServiceOptions _options;
-    private const string LogPrefix = $"{nameof(FfmpegService)}:";
 
     /// <summary>
     /// コンストラクタ
@@ -21,7 +22,7 @@ public sealed class FfmpegService : McpServiceBase, IMediaComposerService
     /// <param name="mcpLogger"> 記録用のロガーを指定します。 </param>
     /// <param name="options"> サービスの設定オプションを指定します。 </param>
     public FfmpegService(IMcpLogger mcpLogger, IFfmpegServiceOptions options)
-        : base(mcpLogger)
+        : base(mcpLogger, options.FfmpegKnowledgeOptions)
     {
         McpLogger?.Info($"{LogPrefix} 初期化処理開始");
 
@@ -47,6 +48,25 @@ public sealed class FfmpegService : McpServiceBase, IMediaComposerService
         return
             "未実装：FfmpegService では、現在コンテンツ生成ガイドは提供されていません。" +
             "将来的には、パラメータ指定方法などのマークダウン形式のガイドが提供される予定です。";
+    }
+
+    /// <summary>
+    /// ナレッジコンテンツを取得します。
+    /// </summary>
+    /// <returns> ナレッジコンテンツの列挙 </returns>
+    public override IEnumerable<string> GetServiceKnowledgeContents()
+    {
+        var contents = base.GetServiceKnowledgeContents();
+        if (contents == null || !contents.Any())
+        {
+            McpLogger?.Warn($"{LogPrefix} FFmpeg サービスは現在ナレッジコンテンツが存在しません。");
+            return new List<string>()
+            {
+                "# FFMPEG MCP ナレッジ：" + Environment.NewLine + Environment.NewLine +
+                "現在、FFMPEG サービスにはナレッジコンテンツが設定されていません。",
+            };
+        }
+        return contents;
     }
 
     /// <inheritdoc/>

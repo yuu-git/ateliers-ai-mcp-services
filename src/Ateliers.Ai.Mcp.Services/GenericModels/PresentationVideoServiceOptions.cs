@@ -26,8 +26,12 @@ public class PresentationVideoServiceOptions : OutputDirectoryProvider, IPresent
 
     public IReadOnlyList<string> SeparatorHeadingPrefixList { get; init; } = new List<string> { "# ", "## " };
 
+    public IList<MarpGenerationKnowledgeOptions> MarpKnowledgeOptions { get; init; } = new List<MarpGenerationKnowledgeOptions>();
+
     // IFfmpegServiceOptions
     public string FfmpegExecutablePath { get; init; } = "ffmpeg";
 
     public string MediaOutputDirectoryName { get; init; } = "media";
+
+    public IList<FfmpegGenerationKnowledgeOptions> FfmpegKnowledgeOptions { get; init; } = new List<FfmpegGenerationKnowledgeOptions>();
 }

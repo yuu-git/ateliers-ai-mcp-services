@@ -19,4 +19,9 @@ public interface IMarpServiceOptions : IOutputDirectoryProvider
     /// スライド区切り見出しのリスト
     /// </summary>
     IReadOnlyList<string> SeparatorHeadingPrefixList { get; }
+
+    /// <summary>
+    /// Marp 用のコンテンツ生成ナレッジオプション群
+    /// </summary>
+    IList<MarpGenerationKnowledgeOptions> MarpKnowledgeOptions { get; }
 }

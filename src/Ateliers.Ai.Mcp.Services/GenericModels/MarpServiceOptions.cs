@@ -20,4 +20,6 @@ public sealed class MarpServiceOptions : OutputDirectoryProvider, IMarpServiceOp
     /// default: "#", "##"
     /// </summary>
     public IReadOnlyList<string> SeparatorHeadingPrefixList { get; init; } = new List<string> { "#", "##" };
+
+    public IList<MarpGenerationKnowledgeOptions> MarpKnowledgeOptions { get; init; } = new List<MarpGenerationKnowledgeOptions>();
 }
