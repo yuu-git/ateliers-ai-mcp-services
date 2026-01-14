@@ -19,10 +19,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Ateliers.Ai.Mcp.Services.Ffmpeg\Ateliers.Ai.Mcp.Services.Ffmpeg.csproj" />
-    <ProjectReference Include="..\Ateliers.Ai.Mcp.Services.Marp\Ateliers.Ai.Mcp.Services.Marp.csproj" />
     <ProjectReference Include="..\Ateliers.Ai.Mcp.Services.PresentationVideo\Ateliers.Ai.Mcp.Services.PresentationVideo.csproj" />
-    <ProjectReference Include="..\Ateliers.Ai.Mcp.Services.Voicevox\Ateliers.Ai.Mcp.Services.Voicevox.csproj" />
   </ItemGroup>
 
   <ItemGroup>

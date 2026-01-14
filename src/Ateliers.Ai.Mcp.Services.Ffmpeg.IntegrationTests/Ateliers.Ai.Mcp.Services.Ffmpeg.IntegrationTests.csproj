@@ -26,4 +26,19 @@
     <ProjectReference Include="..\Ateliers.Ai.Mcp.Services.Ffmpeg\Ateliers.Ai.Mcp.Services.Ffmpeg.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Update="TestDatas\P001\slide.001.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="TestDatas\P001\slide.002.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="TestDatas\P001\voice.001.wav">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="TestDatas\P001\voice.002.wav">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
 </Project>

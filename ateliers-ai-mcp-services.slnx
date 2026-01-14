@@ -20,12 +20,15 @@
     <Project Path="src/Ateliers.Ai.Mcp.Services/Ateliers.Ai.Mcp.Services.csproj" />
   </Folder>
   <Folder Name="/src/unit tests/">
+    <Project Path="src/Ateliers.Ai.Mcp.Services.Ffmpeg.IntegrationTests/Ateliers.Ai.Mcp.Services.Ffmpeg.IntegrationTests.csproj" Id="41892491-2745-4f31-8de4-8261c33ed1c3" />
     <Project Path="src/Ateliers.Ai.Mcp.Services.Ffmpeg.UnitTests/Ateliers.Ai.Mcp.Services.Ffmpeg.UnitTests.csproj" Id="e8ff03a9-f080-429c-850a-0a2327494c66" />
     <Project Path="src/Ateliers.Ai.Mcp.Services.Git.UnitTests/Ateliers.Ai.Mcp.Services.Git.UnitTests.csproj" Id="6fab2421-cd0f-4d7a-84a3-99e034b5181e" />
     <Project Path="src/Ateliers.Ai.Mcp.Services.GitHub.UnitTests/Ateliers.Ai.Mcp.Services.GitHub.UnitTests.csproj" Id="1eee12dc-7804-46c5-babf-bf97684496cf" />
     <Project Path="src/Ateliers.Ai.Mcp.Services.LocalFs.UnitTests/Ateliers.Ai.Mcp.Services.LocalFs.UnitTests.csproj" Id="0f0f0275-9d1a-4cfc-a878-f0469849ac2c" />
+    <Project Path="src/Ateliers.Ai.Mcp.Services.Marp.IntegrationTests/Ateliers.Ai.Mcp.Services.Marp.IntegrationTests.csproj" Id="8d47a6b5-5dce-4b1e-83e0-06bff7d56dd1" />
     <Project Path="src/Ateliers.Ai.Mcp.Services.Marp.UnitTests/Ateliers.Ai.Mcp.Services.Marp.UnitTests.csproj" Id="d3d8aa7d-235a-49f0-b9bb-e9184414db4d" />
     <Project Path="src/Ateliers.Ai.Mcp.Services.Notion.UnitTests/Ateliers.Ai.Mcp.Services.Notion.UnitTests.csproj" Id="e9cc32a1-bd61-4e76-9b60-21bdb9ab6f51" />
+    <Project Path="src/Ateliers.Ai.Mcp.Services.PresentationVideo.IntegrationTests/Ateliers.Ai.Mcp.Services.PresentationVideo.IntegrationTests.csproj" Id="4dd54c4b-c035-4973-849b-4fa5c40dc306" />
     <Project Path="src/Ateliers.Ai.Mcp.Services.PresentationVideo.UnitTests/Ateliers.Ai.Mcp.Services.PresentationVideo.UnitTests.csproj" Id="c8508597-cadf-4a4a-943d-ce9c59ba344b" />
     <Project Path="src/Ateliers.Ai.Mcp.Services.UnitTests/Ateliers.Ai.Mcp.Services.UnitTests.csproj" Id="eee5b1ff-f64b-4dd3-a7f2-5ada20aa934f" />
     <Project Path="src/Ateliers.Ai.Mcp.Services.VoicePeak.IntegrationTests/Ateliers.Ai.Mcp.Services.VoicePeak.IntegrationTests.csproj" />
