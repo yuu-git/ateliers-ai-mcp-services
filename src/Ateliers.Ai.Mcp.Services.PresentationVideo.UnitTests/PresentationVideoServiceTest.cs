@@ -112,9 +112,14 @@ namespace Ateliers.Ai.Mcp.Services.PresentationVideo.UnitTests
         {
             // Arrange
             var logger = new InMemoryMcpLogger(new McpLoggerOptions());
-            var mockVoiceService = new Moq.Mock<IGenerateVoiceService>();
-            var mockSlideService = new Moq.Mock<IGenerateSlideService>();
-            var mockMediaService = new Moq.Mock<IMediaComposerService>();
+            var mockVoiceService = new Mock<IGenerateVoiceService>();
+            var mockSlideService = new Mock<IGenerateSlideService>();
+            var mockMediaService = new Mock<IMediaComposerService>();
+
+            // すべてのサービスが空のナレッジを返すように設定
+            mockVoiceService.Setup(s => s.GetServiceKnowledgeContents()).Returns(new List<string>());
+            mockSlideService.Setup(s => s.GetServiceKnowledgeContents()).Returns(new List<string>());
+            mockMediaService.Setup(s => s.GetServiceKnowledgeContents()).Returns(new List<string>());
 
             var options = new PresentationVideoServiceOptions
             {
@@ -131,13 +136,16 @@ namespace Ateliers.Ai.Mcp.Services.PresentationVideo.UnitTests
                 mockSlideService.Object,
                 mockMediaService.Object);
 
+
             // Act
             var contents = service.GetServiceKnowledgeContents().ToList();
 
             // Assert
-            Assert.Single(contents);
-            Assert.Contains("PRESENTATION VIDEO MCP ナレッジ", contents[0]);
-            Assert.Contains("現在、PRESENTATION VIDEO サービスにはナレッジコンテンツが設定されていません", contents[0]);
+            Assert.Equal(13, contents.Count); // 4サービス × メッセージ + 3セパレータ × 3行
+            Assert.Contains("現在、プレゼンテーション動画生成サービスにはナレッジコンテンツが設定されていません", contents[0]);
+            Assert.Contains("現在、音声生成サービスにはナレッジコンテンツが設定されていません", contents[4]);
+            Assert.Contains("現在、スライド生成サービスにはナレッジコンテンツが設定されていません", contents[8]);
+            Assert.Contains("現在、メディア合成サービスにはナレッジコンテンツが設定されていません", contents[12]);
         }
 
         [Fact(DisplayName = "GetServiceKnowledgeContents: nullのナレッジオプションの場合にデフォルトメッセージを返すこと")]
@@ -145,9 +153,14 @@ namespace Ateliers.Ai.Mcp.Services.PresentationVideo.UnitTests
         {
             // Arrange
             var logger = new InMemoryMcpLogger(new McpLoggerOptions());
-            var mockVoiceService = new Moq.Mock<IGenerateVoiceService>();
-            var mockSlideService = new Moq.Mock<IGenerateSlideService>();
-            var mockMediaService = new Moq.Mock<IMediaComposerService>();
+            var mockVoiceService = new Mock<IGenerateVoiceService>();
+            var mockSlideService = new Mock<IGenerateSlideService>();
+            var mockMediaService = new Mock<IMediaComposerService>();
+
+            // すべてのサービスが空のナレッジを返すように設定
+            mockVoiceService.Setup(s => s.GetServiceKnowledgeContents()).Returns(new List<string>());
+            mockSlideService.Setup(s => s.GetServiceKnowledgeContents()).Returns(new List<string>());
+            mockMediaService.Setup(s => s.GetServiceKnowledgeContents()).Returns(new List<string>());
 
             var options = new PresentationVideoServiceOptions
             {
@@ -163,13 +176,14 @@ namespace Ateliers.Ai.Mcp.Services.PresentationVideo.UnitTests
                 mockSlideService.Object,
                 mockMediaService.Object);
 
+
             // Act
             var contents = service.GetServiceKnowledgeContents().ToList();
 
             // Assert
-            Assert.Single(contents);
-            Assert.Contains("PRESENTATION VIDEO MCP ナレッジ", contents[0]);
-            Assert.Contains("現在、PRESENTATION VIDEO サービスにはナレッジコンテンツが設定されていません", contents[0]);
+            Assert.Equal(13, contents.Count);
+            Assert.Contains("現在、プレゼンテーション動画生成サービスにはナレッジコンテンツが設定されていません", contents[0]);
+            Assert.Contains("現在、音声生成サービスにはナレッジコンテンツが設定されていません", contents[4]);
         }
 
         [Fact(DisplayName = "GetServiceKnowledgeContents: ベースクラスがナレッジを返す場合にそれを使用すること")]
@@ -177,9 +191,14 @@ namespace Ateliers.Ai.Mcp.Services.PresentationVideo.UnitTests
         {
             // Arrange
             var logger = new InMemoryMcpLogger(new McpLoggerOptions());
-            var mockVoiceService = new Moq.Mock<IGenerateVoiceService>();
-            var mockSlideService = new Moq.Mock<IGenerateSlideService>();
-            var mockMediaService = new Moq.Mock<IMediaComposerService>();
+            var mockVoiceService = new Mock<IGenerateVoiceService>();
+            var mockSlideService = new Mock<IGenerateSlideService>();
+            var mockMediaService = new Mock<IMediaComposerService>();
+
+            // 他のサービスは空のナレッジを返すように設定
+            mockVoiceService.Setup(s => s.GetServiceKnowledgeContents()).Returns(new List<string>());
+            mockSlideService.Setup(s => s.GetServiceKnowledgeContents()).Returns(new List<string>());
+            mockMediaService.Setup(s => s.GetServiceKnowledgeContents()).Returns(new List<string>());
 
             var tempFile = Path.GetTempFileName();
             File.WriteAllText(tempFile, "# PresentationVideoテストナレッジ\n\nこれはプレゼンテーション動画用のテストナレッジコンテンツです。");
@@ -214,7 +233,8 @@ namespace Ateliers.Ai.Mcp.Services.PresentationVideo.UnitTests
                 var contents = service.GetServiceKnowledgeContents().ToList();
 
                 // Assert
-                Assert.Single(contents);
+                // プレゼン(1) + セパレータ(3) + 音声空(1) + セパレータ(3) + スライド空(1) + セパレータ(3) + メディア空(1) = 13
+                Assert.Equal(13, contents.Count);
                 Assert.Contains("PresentationVideoテストナレッジ", contents[0]);
                 Assert.Contains("プレゼンテーション動画用のテストナレッジコンテンツです", contents[0]);
             }
@@ -232,9 +252,132 @@ namespace Ateliers.Ai.Mcp.Services.PresentationVideo.UnitTests
         {
             // Arrange
             var logger = new InMemoryMcpLogger(new McpLoggerOptions());
-            var mockVoiceService = new Moq.Mock<IGenerateVoiceService>();
-            var mockSlideService = new Moq.Mock<IGenerateSlideService>();
-            var mockMediaService = new Moq.Mock<IMediaComposerService>();
+            var mockVoiceService = new Mock<IGenerateVoiceService>();
+            var mockSlideService = new Mock<IGenerateSlideService>();
+            var mockMediaService = new Mock<IMediaComposerService>();
+
+            // すべてのサービスが空のナレッジを返すように設定
+            mockVoiceService.Setup(s => s.GetServiceKnowledgeContents()).Returns(new List<string>());
+            mockSlideService.Setup(s => s.GetServiceKnowledgeContents()).Returns(new List<string>());
+            mockMediaService.Setup(s => s.GetServiceKnowledgeContents()).Returns(new List<string>());
+
+            var options = new PresentationVideoServiceOptions
+            {
+                ResourcePath = "/dummy/path",
+                MarpExecutablePath = "marp",
+                FfmpegExecutablePath = "ffmpeg",
+                PresentationVideoKnowledgeOptions = new List<PresentationVideoGenerationKnowledgeOptions>()
+            };
+
+            var service = new PresentationVideoService(
+                logger,
+                options,
+                mockVoiceService.Object,
+                mockSlideService.Object,
+                mockMediaService.Object);
+
+
+            // Act
+            var contents = service.GetServiceKnowledgeContents().ToList();
+
+            // Assert
+            // 4つのサービス × (メッセージ + 空行 + セパレータ + 空行) = 16件
+            // ただし最初のセパレータは無いので: 1 + 3×4 = 13件
+            Assert.Equal(13, contents.Count);
+            Assert.Contains("現在、プレゼンテーション動画生成サービスにはナレッジコンテンツが設定されていません", contents[0]);
+            Assert.Equal("---", contents[2]); // 最初のセパレータ
+            Assert.Contains("現在、音声生成サービスにはナレッジコンテンツが設定されていません", contents[4]);
+            Assert.Equal("---", contents[6]); // 2番目のセパレータ
+            Assert.Contains("現在、スライド生成サービスにはナレッジコンテンツが設定されていません", contents[8]);
+            Assert.Equal("---", contents[10]); // 3番目のセパレータ
+            Assert.Contains("現在、メディア合成サービスにはナレッジコンテンツが設定されていません", contents[12]);
+        }
+
+        [Fact(DisplayName = "GetServiceKnowledgeContents: 各サービスからナレッジを統合して返すこと")]
+        public void GetServiceKnowledgeContents_WithAllServicesKnowledge_ReturnsIntegratedKnowledge()
+        {
+            // Arrange
+            var logger = new InMemoryMcpLogger(new McpLoggerOptions());
+            var mockVoiceService = new Mock<IGenerateVoiceService>();
+            var mockSlideService = new Mock<IGenerateSlideService>();
+            var mockMediaService = new Mock<IMediaComposerService>();
+
+            // 各サービスがナレッジを返すように設定
+            mockVoiceService.Setup(s => s.GetServiceKnowledgeContents())
+                .Returns(new List<string> { "# 音声生成ナレッジ", "音声に関する情報" });
+            mockSlideService.Setup(s => s.GetServiceKnowledgeContents())
+                .Returns(new List<string> { "# スライド生成ナレッジ", "スライドに関する情報" });
+            mockMediaService.Setup(s => s.GetServiceKnowledgeContents())
+                .Returns(new List<string> { "# メディア合成ナレッジ", "動画合成に関する情報" });
+
+            var tempFile = Path.GetTempFileName();
+            File.WriteAllText(tempFile, "# プレゼンテーションナレッジ\nプレゼンテーションに関する情報");
+
+            try
+            {
+                var options = new PresentationVideoServiceOptions
+                {
+                    ResourcePath = "/dummy/path",
+                    MarpExecutablePath = "marp",
+                    FfmpegExecutablePath = "ffmpeg",
+                    PresentationVideoKnowledgeOptions = new List<PresentationVideoGenerationKnowledgeOptions>
+                    {
+                        new PresentationVideoGenerationKnowledgeOptions
+                        {
+                            KnowledgeType = "LocalFile",
+                            KnowledgeSource = tempFile,
+                            DocumentType = "Markdown",
+                            GenerateHeader = false
+                        }
+                    }
+                };
+
+                var service = new PresentationVideoService(
+                    logger,
+                    options,
+                    mockVoiceService.Object,
+                    mockSlideService.Object,
+                    mockMediaService.Object);
+
+                // Act
+                var contents = service.GetServiceKnowledgeContents().ToList();
+
+                // Assert
+                // プレゼン(1) + セパレータ(3) + 音声(2) + セパレータ(3) + スライド(2) + セパレータ(3) + メディア(2) = 16
+                Assert.Equal(16, contents.Count);
+                Assert.Contains("プレゼンテーションナレッジ", contents[0]);
+                Assert.Equal("---", contents[2]); // 最初のセパレータ
+                Assert.Contains("音声生成ナレッジ", contents[4]);
+                Assert.Equal("---", contents[7]); // 2番目のセパレータ
+                Assert.Contains("スライド生成ナレッジ", contents[9]);
+                Assert.Equal("---", contents[12]); // 3番目のセパレータ
+                Assert.Contains("メディア合成ナレッジ", contents[14]);
+            }
+            finally
+            {
+                if (File.Exists(tempFile))
+                {
+                    File.Delete(tempFile);
+                }
+            }
+        }
+
+        [Fact(DisplayName = "GetServiceKnowledgeContents: 一部のサービスのみナレッジがある場合に統合して返すこと")]
+        public void GetServiceKnowledgeContents_WithPartialKnowledge_ReturnsAvailableKnowledge()
+        {
+            // Arrange
+            var logger = new InMemoryMcpLogger(new McpLoggerOptions());
+            var mockVoiceService = new Mock<IGenerateVoiceService>();
+            var mockSlideService = new Mock<IGenerateSlideService>();
+            var mockMediaService = new Mock<IMediaComposerService>();
+
+            // 音声とスライドのみナレッジを返すように設定
+            mockVoiceService.Setup(s => s.GetServiceKnowledgeContents())
+                .Returns(new List<string> { "# 音声生成ナレッジ", "音声に関する情報" });
+            mockSlideService.Setup(s => s.GetServiceKnowledgeContents())
+                .Returns(new List<string> { "# スライド生成ナレッジ", "スライドに関する情報" });
+            mockMediaService.Setup(s => s.GetServiceKnowledgeContents())
+                .Returns(new List<string>());
 
             var options = new PresentationVideoServiceOptions
             {
@@ -255,10 +398,51 @@ namespace Ateliers.Ai.Mcp.Services.PresentationVideo.UnitTests
             var contents = service.GetServiceKnowledgeContents().ToList();
 
             // Assert
-            Assert.Single(contents);
-            Assert.Contains("PRESENTATION VIDEO MCP ナレッジ", contents[0]);
-            Assert.Contains("現在、PRESENTATION VIDEO サービスにはナレッジコンテンツが設定されていません", contents[0]);
+            // プレゼン空メッセージ(1) + セパレータ(3) + 音声(2) + セパレータ(3) + スライド(2) + セパレータ(3) + メディア空メッセージ(1) = 15
+            Assert.Equal(15, contents.Count);
+            Assert.Contains("現在、プレゼンテーション動画生成サービスにはナレッジコンテンツが設定されていません", contents[0]);
+            Assert.Contains("音声生成ナレッジ", contents[4]);
+            Assert.Contains("スライド生成ナレッジ", contents[9]);
+            Assert.Contains("現在、メディア合成サービスにはナレッジコンテンツが設定されていません", contents[14]);
+        }
+
+        [Fact(DisplayName = "GetServiceKnowledgeContents: 各サービスメソッドが呼び出されることを確認")]
+        public void GetServiceKnowledgeContents_CallsAllServiceMethods()
+        {
+            // Arrange
+            var logger = new InMemoryMcpLogger(new McpLoggerOptions());
+            var mockVoiceService = new Mock<IGenerateVoiceService>();
+            var mockSlideService = new Mock<IGenerateSlideService>();
+            var mockMediaService = new Mock<IMediaComposerService>();
+
+            mockVoiceService.Setup(s => s.GetServiceKnowledgeContents()).Returns(new List<string>());
+            mockSlideService.Setup(s => s.GetServiceKnowledgeContents()).Returns(new List<string>());
+            mockMediaService.Setup(s => s.GetServiceKnowledgeContents()).Returns(new List<string>());
+
+            var options = new PresentationVideoServiceOptions
+            {
+                ResourcePath = "/dummy/path",
+                MarpExecutablePath = "marp",
+                FfmpegExecutablePath = "ffmpeg"
+            };
+
+            var service = new PresentationVideoService(
+                logger,
+                options,
+                mockVoiceService.Object,
+                mockSlideService.Object,
+                mockMediaService.Object);
+
+
+            // Act
+            var contents = service.GetServiceKnowledgeContents().ToList();
+
+            // Assert
+            mockVoiceService.Verify(s => s.GetServiceKnowledgeContents(), Times.Once);
+            mockSlideService.Verify(s => s.GetServiceKnowledgeContents(), Times.Once);
+            mockMediaService.Verify(s => s.GetServiceKnowledgeContents(), Times.Once);
         }
     }
 }
+
 

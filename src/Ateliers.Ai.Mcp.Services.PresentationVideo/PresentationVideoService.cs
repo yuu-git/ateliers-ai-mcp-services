@@ -76,17 +76,77 @@ public sealed class PresentationVideoService : McpContentGenerationServiceBase, 
     /// <returns> ナレッジコンテンツの列挙 </returns>
     public override IEnumerable<string> GetServiceKnowledgeContents()
     {
-        var contents = base.GetServiceKnowledgeContents();
-        if (contents == null || !contents.Any())
+        McpLogger?.Info($"{LogPrefix} GetServiceKnowledgeContents 開始");
+
+        var allContents = new List<string>();
+
+        // 1. プレゼンテーションサービス自身のナレッジ取得
+        McpLogger?.Debug($"{LogPrefix} GetServiceKnowledgeContents: プレゼンテーションサービスのナレッジを取得中...");
+        var presentationContents = base.GetServiceKnowledgeContents();
+        if (presentationContents != null && presentationContents.Any())
         {
-            McpLogger?.Warn($"{LogPrefix} PresentationVideo サービスは現在ナレッジコンテンツが存在しません。");
-            return new List<string>()
-            {
-                "# PRESENTATION VIDEO MCP ナレッジ：" + Environment.NewLine + Environment.NewLine +
-                "現在、PRESENTATION VIDEO サービスにはナレッジコンテンツが設定されていません。",
-            };
+            McpLogger?.Debug($"{LogPrefix} GetServiceKnowledgeContents: プレゼンテーションサービスのナレッジ取得完了: {presentationContents.Count()}件");
+            allContents.AddRange(presentationContents);
         }
-        return contents;
+        else
+        {
+            McpLogger?.Debug($"{LogPrefix} GetServiceKnowledgeContents: プレゼンテーションサービスのナレッジは存在しません");
+            allContents.Add("現在、プレゼンテーション動画生成サービスにはナレッジコンテンツが設定されていません。");
+        }
+
+        // 2. 音声生成サービスのナレッジ取得
+        allContents.Add("");
+        allContents.Add("---");
+        allContents.Add("");
+        McpLogger?.Debug($"{LogPrefix} GetServiceKnowledgeContents: 音声生成サービスのナレッジを取得中...");
+        var voiceContents = _voiceService.GetServiceKnowledgeContents();
+        if (voiceContents != null && voiceContents.Any())
+        {
+            McpLogger?.Debug($"{LogPrefix} GetServiceKnowledgeContents: 音声生成サービスのナレッジ取得完了: {voiceContents.Count()}件");
+            allContents.AddRange(voiceContents);
+        }
+        else
+        {
+            McpLogger?.Debug($"{LogPrefix} GetServiceKnowledgeContents: 音声生成サービスのナレッジは存在しません");
+            allContents.Add("現在、音声生成サービスにはナレッジコンテンツが設定されていません。");
+        }
+
+        // 3. スライド生成サービスのナレッジ取得
+        allContents.Add("");
+        allContents.Add("---");
+        allContents.Add("");
+        McpLogger?.Debug($"{LogPrefix} GetServiceKnowledgeContents: スライド生成サービスのナレッジを取得中...");
+        var slideContents = _slideService.GetServiceKnowledgeContents();
+        if (slideContents != null && slideContents.Any())
+        {
+            McpLogger?.Debug($"{LogPrefix} GetServiceKnowledgeContents: スライド生成サービスのナレッジ取得完了: {slideContents.Count()}件");
+            allContents.AddRange(slideContents);
+        }
+        else
+        {
+            McpLogger?.Debug($"{LogPrefix} GetServiceKnowledgeContents: スライド生成サービスのナレッジは存在しません");
+            allContents.Add("現在、スライド生成サービスにはナレッジコンテンツが設定されていません。");
+        }
+
+        // 4. メディア合成サービスのナレッジ取得
+        allContents.Add("");
+        allContents.Add("---");
+        allContents.Add("");
+        McpLogger?.Debug($"{LogPrefix} GetServiceKnowledgeContents: メディア合成サービスのナレッジを取得中...");
+        var mediaContents = _mediaComposerService.GetServiceKnowledgeContents();
+        if (mediaContents != null && mediaContents.Any())
+        {
+            McpLogger?.Debug($"{LogPrefix} GetServiceKnowledgeContents: メディア合成サービスのナレッジ取得完了: {mediaContents.Count()}件");
+            allContents.AddRange(mediaContents);
+        }
+        else
+        {
+            McpLogger?.Debug($"{LogPrefix} GetServiceKnowledgeContents: メディア合成サービスのナレッジは存在しません");
+            allContents.Add("現在、メディア合成サービスにはナレッジコンテンツが設定されていません。");
+        }
+
+        McpLogger?.Info($"{LogPrefix} GetServiceKnowledgeContents 完了: 合計{allContents.Count}件のナレッジを統合");
+        return allContents;
     }
 
     public async Task<PresentationVideoResult> GenerateAsync(
