@@ -61,13 +61,76 @@ public sealed class PresentationVideoService : McpContentGenerationServiceBase, 
     /// <summary>
     /// コンテンツ生成ガイドを取得します。
     /// </summary>
-    /// <returns> 未実装（将来：指定する音声やスライドなどのマークダウン形式のガイド） </returns>
+    /// <returns> 統合されたコンテンツ生成ガイド </returns>
     public string GetContentGenerationGuide()
     {
-        // ToDo: interface IMcpContentGenerationGuideProvider のガイド実装
-        return
-            "未実装：PresentationVideoService では、現在コンテンツ生成ガイドは提供されていません。" +
-            "将来的には、指定する音声やスライドなどのマークダウン形式のガイドが提供される予定です。";
+        McpLogger?.Info($"{LogPrefix} GetContentGenerationGuide 開始");
+
+        var allGuides = new List<string>();
+
+        // 1. プレゼンテーションサービス全体のガイド追加
+        allGuides.Add("# プレゼンテーション動画生成の流れ");
+        allGuides.Add("");
+        allGuides.Add("1. ソースMarkdownを用意します");
+        allGuides.Add("2. スライド区切り見出し（# または ##）でスライドを分割します");
+        allGuides.Add("3. 各スライドに対応するナレーションテキストを用意します");
+        allGuides.Add("4. スライド数とナレーション数が一致している必要があります");
+        allGuides.Add("5. 自動的に音声合成→スライド画像生成→動画合成が実行されます");
+
+        // 2. 音声生成サービスのガイド取得
+        allGuides.Add("");
+        allGuides.Add("---");
+        allGuides.Add("");
+        McpLogger?.Debug($"{LogPrefix} GetContentGenerationGuide: 音声生成サービスのガイドを取得中...");
+        var voiceGuide = _voiceService.GetContentGenerationGuide();
+        if (!string.IsNullOrWhiteSpace(voiceGuide) && !voiceGuide.Contains("未実装"))
+        {
+            McpLogger?.Debug($"{LogPrefix} GetContentGenerationGuide: 音声生成サービスのガイド取得完了");
+            allGuides.Add(voiceGuide);
+        }
+        else
+        {
+            McpLogger?.Debug($"{LogPrefix} GetContentGenerationGuide: 音声生成サービスのガイドは未実装です");
+            allGuides.Add("現在、音声生成サービスにはコンテンツ生成ガイドが実装されていません。");
+        }
+
+        // 3. スライド生成サービスのガイド取得
+        allGuides.Add("");
+        allGuides.Add("---");
+        allGuides.Add("");
+        McpLogger?.Debug($"{LogPrefix} GetContentGenerationGuide: スライド生成サービスのガイドを取得中...");
+        var slideGuide = _slideService.GetContentGenerationGuide();
+        if (!string.IsNullOrWhiteSpace(slideGuide) && !slideGuide.Contains("未実装"))
+        {
+            McpLogger?.Debug($"{LogPrefix} GetContentGenerationGuide: スライド生成サービスのガイド取得完了");
+            allGuides.Add(slideGuide);
+        }
+        else
+        {
+            McpLogger?.Debug($"{LogPrefix} GetContentGenerationGuide: スライド生成サービスのガイドは未実装です");
+            allGuides.Add("現在、スライド生成サービスにはコンテンツ生成ガイドが実装されていません。");
+        }
+
+        // 4. メディア合成サービスのガイド取得
+        allGuides.Add("");
+        allGuides.Add("---");
+        allGuides.Add("");
+        McpLogger?.Debug($"{LogPrefix} GetContentGenerationGuide: メディア合成サービスのガイドを取得中...");
+        var mediaGuide = _mediaComposerService.GetContentGenerationGuide();
+        if (!string.IsNullOrWhiteSpace(mediaGuide) && !mediaGuide.Contains("未実装"))
+        {
+            McpLogger?.Debug($"{LogPrefix} GetContentGenerationGuide: メディア合成サービスのガイド取得完了");
+            allGuides.Add(mediaGuide);
+        }
+        else
+        {
+            McpLogger?.Debug($"{LogPrefix} GetContentGenerationGuide: メディア合成サービスのガイドは未実装です");
+            allGuides.Add("現在、メディア合成サービスにはコンテンツ生成ガイドが実装されていません。");
+        }
+
+        var result = string.Join(Environment.NewLine, allGuides);
+        McpLogger?.Info($"{LogPrefix} GetContentGenerationGuide 完了: {allGuides.Count}行のガイドを統合");
+        return result;
     }
 
     /// <summary>

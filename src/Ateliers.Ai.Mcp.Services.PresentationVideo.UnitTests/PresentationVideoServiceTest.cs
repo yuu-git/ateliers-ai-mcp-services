@@ -442,7 +442,168 @@ namespace Ateliers.Ai.Mcp.Services.PresentationVideo.UnitTests
             mockSlideService.Verify(s => s.GetServiceKnowledgeContents(), Times.Once);
             mockMediaService.Verify(s => s.GetServiceKnowledgeContents(), Times.Once);
         }
+
+        [Fact(DisplayName = "GetContentGenerationGuide: 各サービスからガイドを統合して返すこと")]
+        public void GetContentGenerationGuide_WithAllServicesGuides_ReturnsIntegratedGuide()
+        {
+            // Arrange
+            var logger = new InMemoryMcpLogger(new McpLoggerOptions());
+            var mockVoiceService = new Mock<IGenerateVoiceService>();
+            var mockSlideService = new Mock<IGenerateSlideService>();
+            var mockMediaService = new Mock<IMediaComposerService>();
+
+            // 各サービスがガイドを返すように設定
+            mockVoiceService.Setup(s => s.GetContentGenerationGuide())
+                .Returns("音声生成ガイド：ナレーターを選択してください。");
+            mockSlideService.Setup(s => s.GetContentGenerationGuide())
+                .Returns("スライド生成ガイド：Marp形式でスライドを作成します。");
+            mockMediaService.Setup(s => s.GetContentGenerationGuide())
+                .Returns("メディア合成ガイド：FFmpegで動画を合成します。");
+
+            var options = new PresentationVideoServiceOptions
+            {
+                ResourcePath = "/dummy/path",
+                MarpExecutablePath = "marp",
+                FfmpegExecutablePath = "ffmpeg"
+            };
+
+            var service = new PresentationVideoService(
+                logger,
+                options,
+                mockVoiceService.Object,
+                mockSlideService.Object,
+                mockMediaService.Object);
+
+            // Act
+            var guide = service.GetContentGenerationGuide();
+
+            // Assert
+            Assert.Contains("音声生成ガイド", guide);
+            Assert.Contains("スライド生成ガイド", guide);
+            Assert.Contains("メディア合成ガイド", guide);
+            Assert.Contains("プレゼンテーション動画生成の流れ", guide);
+            Assert.Contains("---", guide); // セパレータの存在確認
+        }
+
+        [Fact(DisplayName = "GetContentGenerationGuide: 未実装のサービスガイドの場合にメッセージを返すこと")]
+        public void GetContentGenerationGuide_WithUnimplementedGuides_ReturnsDefaultMessages()
+        {
+            // Arrange
+            var logger = new InMemoryMcpLogger(new McpLoggerOptions());
+            var mockVoiceService = new Mock<IGenerateVoiceService>();
+            var mockSlideService = new Mock<IGenerateSlideService>();
+            var mockMediaService = new Mock<IMediaComposerService>();
+
+            // すべてのサービスが未実装メッセージを返すように設定
+            mockVoiceService.Setup(s => s.GetContentGenerationGuide())
+                .Returns("未実装：音声生成サービスでは...");
+            mockSlideService.Setup(s => s.GetContentGenerationGuide())
+                .Returns("未実装：スライド生成サービスでは...");
+            mockMediaService.Setup(s => s.GetContentGenerationGuide())
+                .Returns("未実装：メディア合成サービスでは...");
+
+            var options = new PresentationVideoServiceOptions
+            {
+                ResourcePath = "/dummy/path",
+                MarpExecutablePath = "marp",
+                FfmpegExecutablePath = "ffmpeg"
+            };
+
+            var service = new PresentationVideoService(
+                logger,
+                options,
+                mockVoiceService.Object,
+                mockSlideService.Object,
+                mockMediaService.Object);
+
+            // Act
+            var guide = service.GetContentGenerationGuide();
+
+            // Assert
+            Assert.Contains("現在、音声生成サービスにはコンテンツ生成ガイドが実装されていません", guide);
+            Assert.Contains("現在、スライド生成サービスにはコンテンツ生成ガイドが実装されていません", guide);
+            Assert.Contains("現在、メディア合成サービスにはコンテンツ生成ガイドが実装されていません", guide);
+            Assert.Contains("プレゼンテーション動画生成の流れ", guide);
+        }
+
+        [Fact(DisplayName = "GetContentGenerationGuide: 一部のサービスのみガイドがある場合に統合して返すこと")]
+        public void GetContentGenerationGuide_WithPartialGuides_ReturnsAvailableGuides()
+        {
+            // Arrange
+            var logger = new InMemoryMcpLogger(new McpLoggerOptions());
+            var mockVoiceService = new Mock<IGenerateVoiceService>();
+            var mockSlideService = new Mock<IGenerateSlideService>();
+            var mockMediaService = new Mock<IMediaComposerService>();
+
+            // 音声とスライドのみガイドを返すように設定
+            mockVoiceService.Setup(s => s.GetContentGenerationGuide())
+                .Returns("音声生成ガイド：利用可能なナレーター一覧");
+            mockSlideService.Setup(s => s.GetContentGenerationGuide())
+                .Returns("スライド生成ガイド：Marpの使い方");
+            mockMediaService.Setup(s => s.GetContentGenerationGuide())
+                .Returns("未実装");
+
+            var options = new PresentationVideoServiceOptions
+            {
+                ResourcePath = "/dummy/path",
+                MarpExecutablePath = "marp",
+                FfmpegExecutablePath = "ffmpeg"
+            };
+
+            var service = new PresentationVideoService(
+                logger,
+                options,
+                mockVoiceService.Object,
+                mockSlideService.Object,
+                mockMediaService.Object);
+
+            // Act
+            var guide = service.GetContentGenerationGuide();
+
+            // Assert
+            Assert.Contains("音声生成ガイド", guide);
+            Assert.Contains("スライド生成ガイド", guide);
+            Assert.Contains("現在、メディア合成サービスにはコンテンツ生成ガイドが実装されていません", guide);
+            Assert.Contains("プレゼンテーション動画生成の流れ", guide);
+        }
+
+        [Fact(DisplayName = "GetContentGenerationGuide: 各サービスメソッドが呼び出されることを確認")]
+        public void GetContentGenerationGuide_CallsAllServiceMethods()
+        {
+            // Arrange
+            var logger = new InMemoryMcpLogger(new McpLoggerOptions());
+            var mockVoiceService = new Mock<IGenerateVoiceService>();
+            var mockSlideService = new Mock<IGenerateSlideService>();
+            var mockMediaService = new Mock<IMediaComposerService>();
+
+            mockVoiceService.Setup(s => s.GetContentGenerationGuide()).Returns("");
+            mockSlideService.Setup(s => s.GetContentGenerationGuide()).Returns("");
+            mockMediaService.Setup(s => s.GetContentGenerationGuide()).Returns("");
+
+            var options = new PresentationVideoServiceOptions
+            {
+                ResourcePath = "/dummy/path",
+                MarpExecutablePath = "marp",
+                FfmpegExecutablePath = "ffmpeg"
+            };
+
+            var service = new PresentationVideoService(
+                logger,
+                options,
+                mockVoiceService.Object,
+                mockSlideService.Object,
+                mockMediaService.Object);
+
+            // Act
+            var guide = service.GetContentGenerationGuide();
+
+            // Assert
+            mockVoiceService.Verify(s => s.GetContentGenerationGuide(), Times.Once);
+            mockSlideService.Verify(s => s.GetContentGenerationGuide(), Times.Once);
+            mockMediaService.Verify(s => s.GetContentGenerationGuide(), Times.Once);
+        }
     }
 }
+
 
 
