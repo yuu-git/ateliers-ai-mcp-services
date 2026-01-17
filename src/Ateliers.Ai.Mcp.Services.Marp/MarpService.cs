@@ -78,14 +78,24 @@ public sealed class MarpService : McpContentGenerationServiceBase, IGenerateSlid
         foreach (var line in lines)
         {
             // スライド区切り見出しであれば新しいスライドを開始
-            if (_options.SeparatorHeadingPrefixList.Select(head => line.TrimStart().StartsWith(head + " ")).Any(isMatch => isMatch))
+            if (_options.SeparatorHeadingPrefixList.Any(head =>
+            {
+                // ヘッダーにスペースがない場合は追加してチェック（ユーザー設定の柔軟性のため）
+                var prefix = head.EndsWith(" ") ? head : head + " ";
+                return line.TrimStart().StartsWith(prefix);
+            }))
             {
                 currentSlide = new List<string>();
                 slides.Add(currentSlide);
             }
 
             // 現在のスライドがなければ新しいスライドを開始
-            currentSlide ??= new List<string>();
+            if (currentSlide == null)
+            {
+                currentSlide = new List<string>();
+                slides.Add(currentSlide);
+            }
+
             currentSlide.Add(line);
         }
 
