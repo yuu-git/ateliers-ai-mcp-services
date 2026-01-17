@@ -109,7 +109,7 @@ jobs:
           dotnet pack src/Ateliers.Ai.Mcp.Services.LocalFs/Ateliers.Ai.Mcp.Services.LocalFs.csproj --configuration ${{ env.CONFIGURATION }} --no-build --output ./packages
           dotnet pack src/Ateliers.Ai.Mcp.Services.Git/Ateliers.Ai.Mcp.Services.Git.csproj --configuration ${{ env.CONFIGURATION }} --no-build --output ./packages
           dotnet pack src/Ateliers.Ai.Mcp.Services.Voicevox/Ateliers.Ai.Mcp.Services.Voicevox.csproj --configuration ${{ env.CONFIGURATION }} --no-build --output ./packages
-          dotnet pack src/Ateliers.Ai.Mcp.Services.Whisper/Ateliers.Ai.Mcp.Services.VoicePeak.csproj --configuration ${{ env.CONFIGURATION }} --no-build --output ./packages
+          dotnet pack src/Ateliers.Ai.Mcp.Services.VoicePeak/Ateliers.Ai.Mcp.Services.VoicePeak.csproj --configuration ${{ env.CONFIGURATION }} --no-build --output ./packages
           dotnet pack src/Ateliers.Ai.Mcp.Services.Marp/Ateliers.Ai.Mcp.Services.Marp.csproj --configuration ${{ env.CONFIGURATION }} --no-build --output ./packages
           dotnet pack src/Ateliers.Ai.Mcp.Services.Ffmpeg/Ateliers.Ai.Mcp.Services.Ffmpeg.csproj --configuration ${{ env.CONFIGURATION }} --no-build --output ./packages
           dotnet pack src/Ateliers.Ai.Mcp.Services.PresentationVideo/Ateliers.Ai.Mcp.Services.PresentationVideo.csproj --configuration ${{ env.CONFIGURATION }} --no-build --output ./packages
