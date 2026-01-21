@@ -2,7 +2,7 @@
 
 public sealed class VoicevoxServiceOptions : OutputDirectoryProvider, IVoicevoxServiceOptions
 {
-    public required string ResourcePath { get; init; }
+    public required string ResourcePath { get; init; } = @"C:\Program Files\VOICEVOX\vv-engine";
 
     public uint DefaultStyleId { get; init; } = 0;
 
